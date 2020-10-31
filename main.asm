@@ -27,42 +27,26 @@ ENDP terminateProcess
 
 PROC drawTrex
 ARG @@width:word, @@array:dword
-USES EDI, EBX,ecx, eax, esi
-mov ECX, 9	;Breedte
+USES EDI, EBX, ECX, ESI, EDX
+mov ECX, 32					;aantal vertikaal
 mov EBX, [@@array]	;pointer naar gegeugen adres
-mov EDI, VMEMADR
+mov EDI, VMEMADR		;Begin video geheugen
 
-@@govertical: 		;gaat door alle verticale vakjes
-mov EAX, [EBX]		;Zet waarde in eax
-mov esi, ecx
-mov edx, eax
-;================================================================
-;Horizontaal
-;================================================================
-@@gohorizontal: 	;gaat door alle horizontale vakjes
-mov ecx, 8
-@@loopdrawhorizontal:;teken op het scherm
-shl edx, 1          ;bitshift naar links voor volgende getal
-and edx, 80h
-cmp edx, 80h
-mov AL, 07
-mov [EDI], AL       ;Teken op het scherm
+@@govertical:
+mov EDX, ECX				;Hou ctr bij
+mov ECX, 4					;Aantal hex horizontaal
+mov ESI, EDI				;Hou EDI bij
 
-cmp edx,0
-jz @@nextblock
-add edi, 1          ;Verhoog edi met 1
-loop @@loopdrawhorizontal
-
-@@nextblock:		;Volgende horizontale block
-add edi, 8
-mov eax, [ebx]
+@@gohorizontal:
+mov AL, [EBX]				;Zet hex in AL
+mov [EDI], AL				;Zet AL in videogeheugen
+add edi, 1					;Volgende reeks in videogeheugen
+add ebx, 1					;Volgende hex
 loop @@gohorizontal
-;====================================================================
-;Vertikaal
-;====================================================================
-mov ecx, esi
-mov edi, esi
-add edi, 464		; Ga 1 lijnen naar beneden voor volgend vakje
+
+mov ECX, EDX				;Zet ctr terug
+mov EDI, ESI				;Zet EDI terug
+add EDI, 80				;Volgende rij
 loop @@govertical
 ret
 ENDP drawTrex
@@ -73,7 +57,7 @@ PROC main
 	cld
 
 	call setVideoMode, 12h
-    call drawTrex, offset size, offset logo
+    call drawTrex, offset size, offset Trex
 
     mov	ah,00h
 	int	16h
@@ -82,14 +66,38 @@ ENDP main
 
 DATASEG
 size DW  8, 8
-logo DB 0FFH, 00H
-	 DB 00H, 00H
-	 DB 00H, 00H
-	 DB 00H, 00H
-	 DB 00H, 00H
-	 DB 00H, 00H
-	 DB 00H, 00H
-	 DB 00H, 0FFH
+Trex DB 00H, 00H, 00H, 00H
+	 	 DB 00H, 00H, 03FH, 0FCH
+	 	 DB 00H, 00H, 03FH, 0FCH
+	 	 DB 00H, 00H, 0F3H, 0FFH
+	 	 DB 00H, 00H, 0F3H, 0FFH
+	   DB 00H, 00H, 0FFH, 0FFH
+		 DB 00H, 00H, 0FFH, 0FFH
+	 	 DB 00H, 00H, 0FFH, 00H
+		 DB 00H, 00H, 0FFH, 00H
+		 DB 00H, 00H, 0FFH, 0F0H
+		 DB 00H, 00H, 0FFH, 0F0H
+		 DB 0CH, 03H, 0FCH, 00H
+		 DB 0CH, 03H, 0FCH, 00H
+		 DB 0FH, 0FH, 0FFH, 0C0H
+		 DB 0FH, 0FH, 0FFH, 0C0H
+		 DB 0FH, 0FFH, 0FCH, 0C0H
+		 DB 0FH, 0FFH, 0FCH, 0C0H
+		 DB 0FH, 0FFH, 0FCH, 00H
+		 DB 0FH, 0FFH, 0FCH, 00H
+		 DB 03H, 0FFH, 0FCH, 00H
+		 DB 03H, 0FFH, 0FCH, 00H
+		 DB 00H, 0FFH, 0F0H, 00H
+		 DB 00H, 03FH, 0F0H, 00H
+		 DB 00H, 03FH, 0C0H, 00H
+		 DB 00H, 03FH, 0C0H, 00H
+		 DB 00H, 03CH, 0C0H, 00H
+		 DB 00H, 03CH, 0C0H, 00H
+		 DB 00H, 030H, 0C0H, 00H
+		 DB 00H, 030H, 0C0H, 00H
+		 DB 00H, 03CH, 0F0H, 00H
+		 DB 00H, 03CH, 0F0H, 00H
+		 DB 00H, 00H, 00H, 00H
 
 STACK 100h
 
