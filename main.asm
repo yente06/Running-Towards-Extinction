@@ -88,7 +88,15 @@ ret
 ENDP drawTrex
 
 PROC generateRandomNumber ; Het gegenereerde getal komt terecht in [RandomState], gebaseerd op https://en.wikipedia.org/wiki/Xorshift
-USES EAX, EDX
+USES EAX, EDX, ECX
+; Systeem tijd als random start punt
+cmp [RandomState], 0
+jne @@SkipSeedSetup
+MOV AH, 2Ch    ; Systeem tijd opvragen
+INT 21H
+XOR ECX, EDX   ; Nemen xor van de 2 delen van de tijd
+mov [RandomState], ECX
+@@SkipSeedSetup:
 mov EAX, [RandomState]
 mov EDX, [RandomState]
 SHL EDX, 13							; Left shift met 13
@@ -113,7 +121,7 @@ ENDP generateRandomNumber
 PROC main
 	sti
 	cld
-	call generateRandomNumber
+	;call generateRandomNumber
 	;call setVideoMode, 12h
   ;  call drawTrex, offset Trex, offset Size
 
@@ -160,7 +168,7 @@ Trex DB 00H, 00H, 00H, 00H
 		 DB 00H, 03CH, 0F0H, 00H
 		 DB 00H, 00H, 00H, 00H
 ;Random Generation
-RandomState DD 1957386613 ; Binary: 111 0100 1010 1011 0101 1001 0111 0101
+RandomState DD 0; 1957386613 Binary: 111 0100 1010 1011 0101 1001 0111 0101
 NewLine db ' ', 13, 10, '$' ; 13, 10: newline, $: eindigd interrupt
 
 STACK 100h
