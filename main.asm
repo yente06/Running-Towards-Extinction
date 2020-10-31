@@ -87,7 +87,7 @@ loop @@govertical
 ret
 ENDP drawTrex
 
-PROC generateRandomNumber ; Het gegenereerde getal komt terecht in [RandomState], gebaseerd op https://en.wikipedia.org/wiki/Xorshift
+PROC generateRandomNumber ; Het gegenereerde getal komt terecht in [RandomState], gebaseerd op https://en.wikipedia.org/wiki/Xorshift, min val: 0, max val: 4294967295
 USES EAX, EDX, ECX
 ; Systeem tijd als random start punt
 cmp [RandomState], 0
