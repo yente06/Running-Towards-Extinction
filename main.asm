@@ -26,15 +26,16 @@ PROC terminateProcess
 ENDP terminateProcess
 
 PROC drawTrex
-ARG @@width:word, @@array:dword
+ARG @@array:dword, @@Size:dword
 USES EDI, EBX, ECX, ESI, EDX
-mov ECX, 32					;aantal vertikaal
+mov EAX, [@@Size]
+mov CX, [EAX]				;Aantal verikale loops
 mov EBX, [@@array]	;pointer naar gegeugen adres
-mov EDI, VMEMADR		;Begin video geheugen
+mov EDI, VMEMADR+640*40+5		;Begin video geheugen
 
 @@govertical:
 mov EDX, ECX				;Hou ctr bij
-mov ECX, 4					;Aantal hex horizontaal
+mov CX, [EAX+2]			;Aantal hex horizontaal
 mov ESI, EDI				;Hou EDI bij
 
 @@gohorizontal:
@@ -44,6 +45,7 @@ add edi, 1					;Volgende reeks in videogeheugen
 add ebx, 1					;Volgende hex
 loop @@gohorizontal
 
+mov EAX, [@@Size]		;Zet ctr voor inner loop terug
 mov ECX, EDX				;Zet ctr terug
 mov EDI, ESI				;Zet EDI terug
 add EDI, 80				;Volgende rij
@@ -57,7 +59,7 @@ PROC main
 	cld
 
 	call setVideoMode, 12h
-    call drawTrex, offset size, offset Trex
+    call drawTrex, offset Trex, offset Size
 
     mov	ah,00h
 	int	16h
@@ -65,7 +67,7 @@ PROC main
 ENDP main
 
 DATASEG
-size DW  8, 8
+Size DW  32, 4
 Trex DB 00H, 00H, 00H, 00H
 	 	 DB 00H, 00H, 03FH, 0FCH
 	 	 DB 00H, 00H, 03FH, 0FCH
