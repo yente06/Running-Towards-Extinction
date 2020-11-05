@@ -61,15 +61,16 @@ ENDP terminateProcess
 
 PROC drawFloor
 ARG @@symb:dword, @@width:dword
-USES EDI, EBX, EAX
+USES EDI, EBX, EAX, ECX
 mov EDI, VMEMADR	;Geheugen adres
 mov EBX, [@@symb]	;adres Hex waarde
-mov AL, [EBX]			; Hex waarde
-
+mov eax, [EBX]		; Hex waarde
 mov EBX, [@@width]
 mov CX, [EBX]				;grote
 ; Nu zit in AL: waarde en BX: Grootte
+
 REP STOSB
+
 ret
 ENDP drawFloor
 
@@ -137,7 +138,7 @@ PROC main
 	cld
 	;call generateRandomNumber
 	call setVideoMode, 12h
-  ;call drawTrex, offset Trex, offset Size
+  call drawTrex, offset Trex, offset Size
 	call drawFloor, offset Floor, offset SizeFloor
 
 	mov ah,0h		; wait for keystroke
@@ -183,7 +184,7 @@ Trex DB 00H, 00H, 00H, 00H
 		 DB 00H, 03CH, 0F0H, 00H
 		 DB 00H, 00H, 00H, 00H
 
-SizeFloor DW 800
+SizeFloor DW 80
 Floor DB 0ffH
 ;Random Generation
 RandomState DD 0; 1957386613 Binary: 111 0100 1010 1011 0101 1001 0111 0101
