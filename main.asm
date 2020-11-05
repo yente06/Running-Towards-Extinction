@@ -59,6 +59,20 @@ PROC terminateProcess
 	ret
 ENDP terminateProcess
 
+PROC drawFloor
+ARG @@symb:dword, @@width:dword
+USES EDI, EBX, EAX
+mov EDI, VMEMADR	;Geheugen adres
+mov EBX, [@@symb]	;adres Hex waarde
+mov AX, [EBX]			; Hex waarde
+xor ebx, ebx
+
+mov EBX, [@@width]
+mov CX, [EBX]				;grote
+REP STOSB
+ret
+ENDP drawFloor
+
 PROC drawTrex
 ARG @@array:dword, @@Size:dword
 USES EDI, EBX, ECX, ESI, EDX
@@ -122,9 +136,9 @@ PROC main
 	sti
 	cld
 	;call generateRandomNumber
-	;call setVideoMode, 12h
-  ;call drawTrex, offset Trex, offset Size
-	;call drawTrex, offset Floor, offset SizeFloor
+	call setVideoMode, 12h
+  call drawTrex, offset Trex, offset Size
+	call drawFloor, offset Floor, offset SizeFloor
 
 	mov ah,0h		; wait for keystroke
 	int 16h
@@ -169,9 +183,8 @@ Trex DB 00H, 00H, 00H, 00H
 		 DB 00H, 03CH, 0F0H, 00H
 		 DB 00H, 00H, 00H, 00H
 
-;SizeFloor DW 2, 80
-;Floor DB 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH
-;			DB 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH, 0FFH
+SizeFloor DW 2
+Floor DB 0ffH
 ;Random Generation
 RandomState DD 0; 1957386613 Binary: 111 0100 1010 1011 0101 1001 0111 0101
 NewLine db ' ', 13, 10, '$' ; 13, 10: newline, $: eindigd interrupt
