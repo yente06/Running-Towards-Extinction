@@ -4,8 +4,8 @@ MODEL FLAT, C
 ASSUME cs:_TEXT,ds:FLAT,es:FLAT,fs:FLAT,gs:FLAT
 
 
-SCRWIDTH EQU 320	; Pixels scherm breedte
-SCRHEIGHT EQU 200   ;Pixels scherm hoogte
+SCRWIDTH EQU 640	; Pixels scherm breedte
+SCRHEIGHT EQU 480   ;Pixels scherm hoogte
 VMEMADR EQU 0A0000h
 
 CODESEG
@@ -69,8 +69,16 @@ mov EBX, [@@width]
 mov CX, [EBX]				;grote
 ; Nu zit in AL: waarde en BX: Grootte
 
-REP STOSB
+;REP STOSB
 
+fillingMemory:
+cmp CX, 0
+je done
+mov [EDI], EAX
+add EDI, 1
+sub CX, 1
+jmp fillingMemory
+done:
 ret
 ENDP drawFloor
 
