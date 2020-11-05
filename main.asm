@@ -64,23 +64,13 @@ ARG @@symb:dword, @@width:dword, @@heightOffset:dword
 USES EDI, EBX, EAX, ECX
 mov EDI, [@@heightOffset] ; Voegen heightOffset toe
 imul EDI, SCRWIDTH				; HeightOffset maal SCRWIDTH om naar beneden te gaan
-add EDI, VMEMADR	;Geheugen adres
-mov EBX, [@@symb]	;adres Hex waarde
-mov eax, [EBX]		; Hex waarde
+add EDI, VMEMADR					;Geheugen adres
+mov EBX, [@@symb]					;adres Hex waarde
+mov eax, [EBX]						; Hex waarde
 mov EBX, [@@width]
-mov CX, [EBX]				;grote
+mov CX, [EBX]							;grote
 ; Nu zit in AL: waarde en BX: Grootte
-
-;REP STOSB
-
-fillingMemory:
-cmp CX, 0
-je done
-mov [EDI], EAX
-add EDI, 1
-sub CX, 1
-jmp fillingMemory
-done:
+REP STOSB
 ret
 ENDP drawFloor
 
@@ -150,7 +140,9 @@ PROC main
 	sti
 	cld
 	;call generateRandomNumber
+	push ds	
 	call setVideoMode, 12h
+	pop es
   call drawSprite, offset Trex, offset Size, 46, 5
 	call drawFloor, offset Floor, offset SizeFloor, 50
 
