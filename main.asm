@@ -60,9 +60,11 @@ PROC terminateProcess
 ENDP terminateProcess
 
 PROC drawFloor
-ARG @@symb:dword, @@width:dword
+ARG @@symb:dword, @@width:dword, @@heightOffset:dword
 USES EDI, EBX, EAX, ECX
-mov EDI, VMEMADR	;Geheugen adres
+mov EDI, [@@heightOffset] ; Voegen heightOffset toe
+imul EDI, SCRWIDTH				; HeightOffset maal SCRWIDTH om naar beneden te gaan
+add EDI, VMEMADR	;Geheugen adres
 mov EBX, [@@symb]	;adres Hex waarde
 mov eax, [EBX]		; Hex waarde
 mov EBX, [@@width]
@@ -82,13 +84,16 @@ done:
 ret
 ENDP drawFloor
 
-PROC drawTrex
-ARG @@array:dword, @@Size:dword
+PROC drawSprite
+ARG @@array:dword, @@Size:dword, @@height:dword, @@offset:dword
 USES EDI, EBX, ECX, ESI, EDX
 mov EAX, [@@Size]
 mov CX, [EAX]				;Aantal verikale loops
 mov EBX, [@@array]	;pointer naar gegeugen adres
-mov EDI, VMEMADR+640*40+5		;Begin video geheugen
+mov EDI, [@@height]
+imul EDI, SCRWIDTH
+add EDI, VMEMADR
+add EDI, [@@offset]
 
 @@govertical:
 mov EDX, ECX				;Hou ctr bij
@@ -108,7 +113,7 @@ mov EDI, ESI				;Zet EDI terug
 add EDI, 80				;Volgende rij
 loop @@govertical
 ret
-ENDP drawTrex
+ENDP drawSprite
 
 PROC generateRandomNumber ; Het gegenereerde getal komt terecht in [RandomState], gebaseerd op https://en.wikipedia.org/wiki/Xorshift, min val: 0, max val: 4294967295
 USES EAX, EDX, ECX
@@ -146,8 +151,8 @@ PROC main
 	cld
 	;call generateRandomNumber
 	call setVideoMode, 12h
-  call drawTrex, offset Trex, offset Size
-	call drawFloor, offset Floor, offset SizeFloor
+  call drawSprite, offset Trex, offset Size, 46, 5
+	call drawFloor, offset Floor, offset SizeFloor, 50
 
 	mov ah,0h		; wait for keystroke
 	int 16h
