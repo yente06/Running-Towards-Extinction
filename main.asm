@@ -80,7 +80,6 @@ USES EDI, EBX, ECX, ESI, EDX
 mov EAX, [@@Size]
 mov CX, [EAX]				;Aantal verikale loops
 mov EBX, [@@array]	;pointer naar gegeugen adres
-xor EDI, EDI
 mov EDI, [@@height]
 mov EDI, [EDI]      ; beacause edi is a pointer to a height
 imul EDI, SCRWIDTH
@@ -140,9 +139,8 @@ ENDP generateRandomNumber
 PROC updateJump
 ARG @@speed:dword
 USES EAX, EDX, ECX, EBX
-xor EAX, EAX
-mov AX, [JumpState]
-cmp AX, 0     ; If the jump state is not null, aka we are already jumping
+mov EAX, [JumpState]
+cmp EAX, 0     ; If the jump state is not null, aka we are already jumping
 jne @@update  ; skip button check if already in the air
 mov ah,01h		; wait for keystroke
 int 16h
@@ -153,26 +151,24 @@ cmp al, 32    ; Check if it is space
 jne @@end			; Skip if it's not space
 
 @@update:
-xor EAX, EAX  ; Set EAX to zero before division
 xor EDX, EDX  ; Set EDX to zero before division
 inc [JumpState]
-mov AX, [JumpState]
+mov EAX, [JumpState]
 mov ECX, [@@speed]
 idiv ECX
 ; EAX is the round division, use it as X in (x-2)^(2)-4
-cmp EAX, 4    ; Y=0 on X=4, so this is the end of the jump
+cmp EAX, 6    ; Y=0 on X=6, so this is the end of the jump
 jne @@skipReset
 ; If the jump is done, we reset the jump state
 mov [JumpState], 0
 @@skipReset:
-sub EAX, 2    ; (x-2)
-imul EAX, EAX ; (x-2)^(2)
-sub EAX, 4    ; (x-2)^(2)-4
+sub EAX, 3    ; (x-3)
+imul EAX, EAX ; (x-3)^(2)
+sub EAX, 9    ; (x-3)^(2)-9
 ; EAX now contains a negative number that we add to the current player height
-xor EDX, EDX  ; Reset EDX beacause the remainder was stored here
-mov DX, [PlayerGroundHeight]
+mov EDX, [PlayerGroundHeight]
 add EDX, EAX
-mov [PlayerHeight], DX ; Updating the player height
+mov [PlayerHeight], EDX ; Updating the player height
 @@end:
 ret
 ENDP updateJump
@@ -185,21 +181,31 @@ PROC main
 	push ds
 	call setVideoMode, 12h
 	pop es
-  call drawSprite, offset Trex, offset Size, 46, 5
 	call drawFloor, offset Floor, offset SizeFloor, 50
 	gameLoop:
-		call updateJump, 200
-		call drawSprite, offset Trex, offset Size, offset PlayerGroundHeight, 5
+		mov EAX, [PlayerHeight]
+		call updateJump, 20000
+		cmp EAX, [PlayerHeight]
+		je @@skipScreenUpdate
+		; Update the screen only when necessary
+		push ds
+		call setVideoMode, 12h
+		pop es
+		call drawFloor, offset Floor, offset SizeFloor, 50
+		@@skipScreenUpdate:
+
+		call drawSprite, offset Trex, offset Size, offset PlayerHeight, 5
 		; For testing
-		;mov ah,0h		; wait for keystroke
-		;int 16h
-		;cmp al, 27    ; Check if it is escape
-		;je terminate
+		mov ah,01h		; wait for keystroke
+		int 16h
+		cmp al, 27    ; Check if it is 'escape'
+		je terminate	; Terminate if it is 'escape'
 	jmp gameLoop
 
 	mov ah,0h		; wait for keystroke
 	int 16h
 	terminate:
+	call setVideoMode, 12h
 	mov	ax,4C00h 	; terminate
 	int 21h
 
@@ -247,9 +253,9 @@ Floor DB 0ffH
 RandomState DD 0; 1957386613 Binary: 111 0100 1010 1011 0101 1001 0111 0101
 NewLine db ' ', 13, 10, '$' ; 13, 10: newline, $: eindigd interrupt
 ;Jumping
-PlayerGroundHeight DW 46
-PlayerHeight DW 46
-JumpState DW 0
+PlayerGroundHeight DD 46
+PlayerHeight DD 46
+JumpState DD 0
 
 STACK 100h
 
