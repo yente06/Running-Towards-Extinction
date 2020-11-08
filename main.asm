@@ -90,7 +90,9 @@ USES EDI, EBX, ECX, ESI, EDX
 mov EAX, [@@Size]
 mov CX, [EAX]				;Aantal verikale loops
 mov EBX, [@@array]	;pointer naar gegeugen adres
+xor EDI, EDI
 mov EDI, [@@height]
+mov EDI, [EDI]      ; beacause edi is a pointer to a height
 imul EDI, SCRWIDTH
 add EDI, VMEMADR
 add EDI, [@@offset]
@@ -145,17 +147,66 @@ mov [RandomState], EAX
 ret
 ENDP generateRandomNumber
 
+PROC updateJump
+ARG @@speed:dword
+USES EAX, EDX, ECX, EBX
+xor EAX, EAX
+mov AX, [JumpState]
+cmp AX, 0     ; If the jump state is not null, aka we are already jumping
+jne @@update  ; skip button check if already in the air
+mov ah,01h		; wait for keystroke
+int 16h
+jz @@end      ; Skip if there is no keyboard input
+mov ah, 00h
+int 16h       ; Get the key and clear the keyboard buffer
+cmp al, 32    ; Check if it is space
+jne @@end			; Skip if it's not space
+
+@@update:
+xor EAX, EAX  ; Set EAX to zero before division
+xor EDX, EDX  ; Set EDX to zero before division
+inc [JumpState]
+mov AX, [JumpState]
+mov ECX, [@@speed]
+idiv ECX
+; EAX is the round division, use it as X in (x-2)^(2)-4
+cmp EAX, 4    ; Y=0 on X=4, so this is the end of the jump
+jne @@skipReset
+; If the jump is done, we reset the jump state
+mov [JumpState], 0
+@@skipReset:
+sub EAX, 2    ; (x-2)
+imul EAX, EAX ; (x-2)^(2)
+sub EAX, 4    ; (x-2)^(2)-4
+; EAX now contains a negative number that we add to the current player height
+xor EDX, EDX  ; Reset EDX beacause the remainder was stored here
+mov DX, [PlayerGroundHeight]
+add EDX, EAX
+mov [PlayerHeight], DX ; Updating the player height
+@@end:
+ret
+ENDP updateJump
+
 
 PROC main
 	sti
 	cld
 	;call generateRandomNumber
-	call setVideoMode, 12h
-  call drawSprite, offset Trex, offset Size, 46, 5
+	call setVideoMode, 12h ; Reset the screen
 	call drawFloor, offset Floor, offset SizeFloor, 50
+	gameLoop:
+		call updateJump, 200
+		call drawSprite, offset Trex, offset Size, offset PlayerGroundHeight, 5
+		; For testing
+		;mov ah,0h		; wait for keystroke
+		;int 16h
+		;cmp al, 27    ; Check if it is escape
+		;je terminate
+	jmp gameLoop
 
 	mov ah,0h		; wait for keystroke
 	int 16h
+	terminate:
 	mov	ax,4C00h 	; terminate
 	int 21h
 
@@ -202,6 +253,10 @@ Floor DB 0ffH
 ;Random Generation
 RandomState DD 0; 1957386613 Binary: 111 0100 1010 1011 0101 1001 0111 0101
 NewLine db ' ', 13, 10, '$' ; 13, 10: newline, $: eindigd interrupt
+;Jumping
+PlayerGroundHeight DW 46
+PlayerHeight DW 46
+JumpState DW 0
 
 STACK 100h
 
