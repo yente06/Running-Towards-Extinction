@@ -139,16 +139,18 @@ ENDP generateRandomNumber
 PROC updateJump
 ARG @@speed:dword
 USES EAX, EDX, ECX, EBX
-mov EAX, [JumpState]
-cmp EAX, 0     ; If the jump state is not null, aka we are already jumping
-jne @@update  ; skip button check if already in the air
 mov ah,01h		; wait for keystroke
 int 16h
-jz @@end      ; Skip if there is no keyboard input
+jz @@checkIfInAir      ; Skip if there is no keyboard input
 mov ah, 00h
 int 16h       ; Get the key and clear the keyboard buffer
 cmp al, 32    ; Check if it is space
-jne @@end			; Skip if it's not space
+je @@update			; Skip if it's not space
+
+@@checkIfInAir:
+mov EAX, [JumpState]
+cmp EAX, 0     ; If the jump state is 0, we are not jumping
+je @@end
 
 @@update:
 xor EDX, EDX  ; Set EDX to zero before division
