@@ -197,6 +197,8 @@ PROC main
 		@@skipScreenUpdate:
 
 		call drawSprite, offset Trex, offset Size, offset PlayerHeight, 5
+		call drawSprite, offset SmallCacti, offset SizeSmallCacti, offset CactiHeight, 70
+		call drawSprite, offset LargeCacti, offset SizeLargeCacti, offset CactiHeight, 67
 		; For testing
 		mov ah,01h		; wait for keystroke
 		int 16h
@@ -207,9 +209,7 @@ PROC main
 	mov ah,0h		; wait for keystroke
 	int 16h
 	terminate:
-	call setVideoMode, 12h
-	mov	ax,4C00h 	; terminate
-	int 21h
+	call terminateProcess
 
 ENDP main
 
@@ -249,6 +249,74 @@ Trex DB 00H, 00H, 00H, 00H
 		 DB 00H, 03CH, 0F0H, 00H
 		 DB 00H, 00H, 00H, 00H
 
+SizeSmallCacti DW  32, 4
+SmallCacti DB 00H, 00H, 00H, 00H
+	 	 			 DB 00H, 00H, 00H, 00H
+	 	 	 		 DB 00H, 00H, 00H, 00H
+	 	 	 		 DB 00H, 00H, 00H, 00H
+	 	 	 		 DB 00H, 00H, 00H, 00H
+	   	 		 DB 00H, 00H, 00H, 00H
+		 		 	 DB 00H, 00H, 00H, 00H
+	 	 	 		 DB 00H, 00H, 00H, 00H
+		 		 	 DB 00H, 00H, 00H, 00H
+		 		 	 DB 00H, 00H, 00H, 00H
+		 		 	 DB 00H, 03H, 0C0H, 00H
+		 		 	 DB 00H, 03H, 0C0H, 00H
+		 		 	 DB 00H, 03H, 0CCH, 00H
+		 		 	 DB 00H, 03H, 0CCH, 00H
+		 		 	 DB 00H, 03H, 0CCH, 00H
+		 		 	 DB 00H, 03H, 0CCH, 00H
+		 		 	 DB 00H, 033H, 0CCH, 00H
+		 		 	 DB 00H, 033H, 0CCH, 00H
+		 		 	 DB 00H, 033H, 0FCH, 00H
+		 		 	 DB 00H, 033H, 0FCH, 00H
+		 		 	 DB 00H, 033H, 0C0H, 00H
+		 		 	 DB 00H, 033H, 0C0H, 00H
+		 		 	 DB 00H, 3FH, 0C0H, 00H
+		 		 	 DB 00H, 3FH, 0C0H, 00H
+		 		 	 DB 00H, 03H, 0C0H, 00H
+				 	 DB 00H, 03H, 0C0H, 00H
+				 	 DB 00H, 03H, 0C0H, 00H
+				 	 DB 00H, 03H, 0C0H, 00H
+				 	 DB 00H, 03H, 0C0H, 00H
+				 	 DB 00H, 03H, 0C0H, 00H
+				 	 DB 00H, 03H, 0C0H, 00H
+				 	 DB 00H, 03H, 0C0H, 00H
+
+SizeLargeCacti DW  32, 4
+LargeCacti DB 00H, 00H, 00H, 00H
+					 DB 00H, 00H, 00H, 00H
+					 DB 00H, 00H, 00H, 00H
+					 DB 00H, 00H, 00H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 0F3H, 0CFH, 00H
+					 DB 00H, 0F3H, 0CFH, 00H
+					 DB 00H, 0F3H, 0CFH, 00H
+					 DB 00H, 0F3H, 0CFH, 00H
+					 DB 00H, 0F3H, 0CFH, 00H
+					 DB 00H, 0F3H, 0CFH, 00H
+					 DB 00H, 0F3H, 0CFH, 00H
+					 DB 00H, 0F3H, 0CFH, 00H
+					 DB 00H, 0FFH, 0FFH, 00H
+					 DB 00H, 0FFH, 0FFH, 00H
+					 DB 00H, 03FH, 0FCH, 00H
+					 DB 00H, 03FH, 0FCH, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+					 DB 00H, 03H, 0C0H, 00H
+
 SizeFloor DW 80
 Floor DB 0ffH
 ;Random Generation
@@ -257,6 +325,7 @@ NewLine db ' ', 13, 10, '$' ; 13, 10: newline, $: eindigd interrupt
 ;Jumping
 PlayerGroundHeight DD 46
 PlayerHeight DD 46
+CactiHeight DD 46
 JumpState DD 0
 
 STACK 100h
