@@ -158,7 +158,7 @@ inc [JumpState]
 mov EAX, [JumpState]
 mov ECX, [@@speed]
 idiv ECX
-; EAX is the round division, use it as X in (x-2)^(2)-4
+; EAX is the round division, use it as X in (x-3)^(2)-9
 cmp EAX, 6    ; Y=0 on X=6, so this is the end of the jump
 jne @@skipReset
 ; If the jump is done, we reset the jump state
@@ -183,7 +183,9 @@ PROC main
 	push ds
 	call setVideoMode, 12h
 	pop es
+	; Draw the floor and T-REX once
 	call drawFloor, offset Floor, offset SizeFloor, 50
+	call drawSprite, offset Trex, offset Size, offset PlayerHeight, 5
 	gameLoop:
 		mov EAX, [PlayerHeight]
 		call updateJump, 20000
@@ -194,11 +196,10 @@ PROC main
 		call setVideoMode, 12h
 		pop es
 		call drawFloor, offset Floor, offset SizeFloor, 50
-		@@skipScreenUpdate:
-
 		call drawSprite, offset Trex, offset Size, offset PlayerHeight, 5
-		call drawSprite, offset SmallCacti, offset SizeSmallCacti, offset CactiHeight, 70
-		call drawSprite, offset LargeCacti, offset SizeLargeCacti, offset CactiHeight, 67
+		@@skipScreenUpdate:
+		;call drawSprite, offset SmallCacti, offset SizeSmallCacti, offset CactiHeight, 70
+		;call drawSprite, offset LargeCacti, offset SizeLargeCacti, offset CactiHeight, 67
 		; For testing
 		mov ah,01h		; wait for keystroke
 		int 16h
