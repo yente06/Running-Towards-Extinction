@@ -199,8 +199,9 @@ PROC main
 		call drawFloor, offset Floor, offset SizeFloor, 50
 		call drawSprite, offset Trex, offset Size, offset PlayerHeight, 5
 		@@skipScreenUpdate:
-		;call drawSprite, offset SmallCacti, offset SizeSmallCacti, offset CactiHeight, 70
-		;call drawSprite, offset LargeCacti, offset SizeLargeCacti, offset CactiHeight, 67
+		;call drawSprite, offset SmallCactus, offset SizeSmallCactus, offset CactusHeight, 70
+		;call drawSprite, offset LargeCactus, offset SizeLargeCactus, offset CactusHeight, 67
+		call drawSprite, offset Pterodactyl, offset SizePterodactyl, offset PterodactylHeight, 67
 		; For testing
 		mov ah,01h		; wait for keystroke
 		int 16h
@@ -251,8 +252,8 @@ Trex DB 00H, 00H, 00H, 00H
 		 DB 00H, 03CH, 0F0H, 00H
 		 DB 00H, 00H, 00H, 00H
 
-SizeSmallCacti DW  32, 4
-SmallCacti DB 00H, 00H, 00H, 00H
+SizeSmallCactus DW  32, 4
+SmallCactus DB 00H, 00H, 00H, 00H
 	 	 			 DB 00H, 00H, 00H, 00H
 	 	 	 		 DB 00H, 00H, 00H, 00H
 	 	 	 		 DB 00H, 00H, 00H, 00H
@@ -285,8 +286,8 @@ SmallCacti DB 00H, 00H, 00H, 00H
 				 	 DB 00H, 03H, 0C0H, 00H
 				 	 DB 00H, 03H, 0C0H, 00H
 
-SizeLargeCacti DW  32, 4
-LargeCacti DB 00H, 00H, 00H, 00H
+SizeLargeCactus DW  32, 4
+LargeCactus DB 00H, 00H, 00H, 00H
 					 DB 00H, 00H, 00H, 00H
 					 DB 00H, 00H, 00H, 00H
 					 DB 00H, 00H, 00H, 00H
@@ -319,6 +320,41 @@ LargeCacti DB 00H, 00H, 00H, 00H
 					 DB 00H, 03H, 0C0H, 00H
 					 DB 00H, 03H, 0C0H, 00H
 
+SizePterodactyl DW  32, 4
+Pterodactyl DB 00H, 00H, 00H, 00H
+						DB 00H, 00H, 00H, 00H
+						DB 00H, 00H, 00H, 00H
+						DB 00H, 00H, 00H, 00H
+						DB 00H, 00H, 00H, 00H
+						DB 00H, 00H, 00H, 00H
+						DB 00H, 00H, 00H, 00H
+						DB 00H, 00H, 00H, 00H
+						DB 00H, 00H, 00H, 00H
+						DB 00H, 00H, 00H, 00H
+						DB 00H, 00H, 00H, 00H
+						DB 00H, 020H, 00H, 00H
+						DB 00H, 050H, 00H, 00H
+						DB 00H, 048H, 00H, 00H
+						DB 00H, 044H, 00H, 00H
+						DB 00H, 042H, 00H, 00H
+						DB 00H, 041H, 00H, 00H
+						DB 03H, 0C0H, 080H, 00H
+						DB 04H, 0E0H, 040H, 00H
+						DB 08H, 0E0H, 020H, 00H
+						DB 010H, 060H, 010H, 00H
+						DB 020H, 020H, 08H, 00H
+						DB 040H, 020H, 04H, 00H
+						DB 080H, 00H, 04H, 00H
+						DB 080H, 00H, 03H, 0F8H
+						DB 07FH, 080H, 00H, 06H
+						DB 00H, 040H, 00H, 03H
+						DB 00H, 020H, 00H, 07CH
+						DB 00H, 010H, 00H, 04H
+						DB 00H, 08H, 00H, 018H
+						DB 00H, 04H, 00H, 020H
+						DB 00H, 03H, 0FFH, 0C0H
+
+
 SizeFloor DW 80
 Floor DB 0ffH
 ;Random Generation
@@ -327,7 +363,8 @@ NewLine db ' ', 13, 10, '$' ; 13, 10: newline, $: eindigd interrupt
 ;Jumping
 PlayerGroundHeight DD 46
 PlayerHeight DD 46
-CactiHeight DD 46
+CactusHeight DD 46
+PterodactylHeight DD 42
 JumpState DD 0
 
 STACK 100h
