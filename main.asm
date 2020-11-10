@@ -153,20 +153,21 @@ cmp EAX, 0     ; If the jump state is 0, we are not jumping
 je @@end
 
 @@update:
-xor EDX, EDX  ; Set EDX to zero before division
 inc [JumpState]
-mov EAX, [JumpState]
-mov ECX, [@@speed]
-idiv ECX
-; EAX is the round division, use it as X in (x-3)^(2)-9
-cmp EAX, 6    ; Y=0 on X=6, so this is the end of the jump
+mov EAX, [JumpState] ; Jump state is X of function
+; EAX is the round division, use it as X in (x/[@@speed]-3)^(2)-9
+mov ECX, 6
+imul ECX, [@@speed] ; Y=0 on X=6*[@@speed]
+cmp EAX, ECX    ; Y=0 on X=6*[@@speed], so this is the end of the jump
 jne @@skipReset
 ; If the jump is done, we reset the jump state
 mov [JumpState], 0
 @@skipReset:
-sub EAX, 3    ; (x-3)
-imul EAX, EAX ; (x-3)^(2)
-sub EAX, 9    ; (x-3)^(2)-9
+xor EDX, EDX  ; Set EDX to zero before division
+idiv [@@speed]; (x/[@@speed])
+sub EAX, 3    ; (x/[@@speed]-3)
+imul EAX, EAX ; (x/[@@speed]-3)^(2)
+sub EAX, 9    ; (x/[@@speed]-3)^(2)-9
 ; EAX now contains a negative number that we add to the current player height
 mov EDX, [PlayerGroundHeight]
 add EDX, EAX
@@ -188,7 +189,7 @@ PROC main
 	call drawSprite, offset Trex, offset Size, offset PlayerHeight, 5
 	gameLoop:
 		mov EAX, [PlayerHeight]
-		call updateJump, 20000
+		call updateJump, 25000
 		cmp EAX, [PlayerHeight]
 		je @@skipScreenUpdate
 		; Update the screen only when necessary
