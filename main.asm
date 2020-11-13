@@ -187,6 +187,10 @@ PROC main
 	; Draw the floor and T-REX once
 	call drawFloor, offset Floor, offset SizeFloor, 50
 	call drawSprite, offset Trex, offset Size, offset PlayerHeight, 5
+	call drawSprite, offset SmallCactus, offset SizeSmallCactus, offset CactusHeight, 70
+	call drawSprite, offset LargeCactus, offset SizeLargeCactus, offset CactusHeight, 67
+	call drawSprite, offset Pterodactyl, offset SizePterodactyl, offset PterodactylHeight, 67
+	
 	gameLoop:
 		mov EAX, [PlayerHeight]
 		call updateJump, 25000
@@ -198,10 +202,11 @@ PROC main
 		pop es
 		call drawFloor, offset Floor, offset SizeFloor, 50
 		call drawSprite, offset Trex, offset Size, offset PlayerHeight, 5
-		@@skipScreenUpdate:
-		;call drawSprite, offset SmallCactus, offset SizeSmallCactus, offset CactusHeight, 70
-		;call drawSprite, offset LargeCactus, offset SizeLargeCactus, offset CactusHeight, 67
+		call drawSprite, offset SmallCactus, offset SizeSmallCactus, offset CactusHeight, 70
+		call drawSprite, offset LargeCactus, offset SizeLargeCactus, offset CactusHeight, 67
 		call drawSprite, offset Pterodactyl, offset SizePterodactyl, offset PterodactylHeight, 67
+		@@skipScreenUpdate:
+
 		; For testing
 		mov ah,01h		; wait for keystroke
 		int 16h
