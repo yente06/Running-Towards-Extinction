@@ -190,7 +190,7 @@ PROC main
 	call drawSprite, offset SmallCactus, offset SizeSmallCactus, offset CactusHeight, 70
 	call drawSprite, offset LargeCactus, offset SizeLargeCactus, offset CactusHeight, 67
 	call drawSprite, offset Pterodactyl, offset SizePterodactyl, offset PterodactylHeight, 67
-	
+
 	gameLoop:
 		mov EAX, [PlayerHeight]
 		call updateJump, 25000
@@ -358,6 +358,7 @@ Pterodactyl DB 00H, 00H, 00H, 00H
 						DB 00H, 07H, 0FFH, 0E0H
 						DB 00H, 03H, 0FFH, 0C0H
 						DB 00H, 00H, 00H, 00H
+;Pterodactyl DB "Sprites/SizePterodactyl.bin", 0
 
 
 SizeFloor DW 80

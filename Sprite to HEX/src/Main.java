@@ -82,6 +82,7 @@ public class Main {
             System.out.print("\n");
         }
         // Print the HEX values
+        /*
         System.out.print("HEX values:\n\n");
         for (int i = 0; i < sprite.length; i++) {
             System.out.print("DB");
@@ -100,6 +101,21 @@ public class Main {
                 System.out.print(" 0"+Integer.toString(dec,16).toUpperCase()+"H");
             }
             System.out.print("\n");
+        }
+        */
+        System.out.print("HEX values:\n\n");
+        for (int i = 0; i < sprite.length; i++) {
+            for (int j = 0; j < sprite[i].length; j+=8) {
+                int dec = 0;
+                for (int k = 0; k < 8; k++) {
+                    int bit = 0;
+                    if (sprite[i][j+k] != ' '){
+                        bit = 1;
+                    }
+                    dec = dec*2+bit;
+                }
+                System.out.print(Integer.toString(dec,16).toUpperCase());
+            }
         }
     }
 }
