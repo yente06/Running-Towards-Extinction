@@ -281,12 +281,14 @@ PROC main
 	call readChunk, offset Pterodactyl
 	call closeFile
 
+	; Start het spel met alle sprites die altijd op het scherm staan al te tekenen
 	call drawFloor, offset Floor, offset SizeFloor, 50
 	call drawSprite, offset Trex, offset PlayerHeight, 5
 	call drawSprite, offset SmallCactus,offset CactusHeight, 70
 	call drawSprite, offset LargeCactus, offset CactusHeight, 67
 	call drawSprite, offset Pterodactyl, offset PterodactylHeight, 67
 
+  ; Start de game loop
 	gameLoop:
 		mov EAX, [PlayerHeight]
 		call updateJump, 25000
