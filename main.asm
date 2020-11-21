@@ -75,11 +75,12 @@ ret
 ENDP drawFloor
 
 PROC drawSprite
-ARG @@array:dword, @@Size:dword, @@height:dword, @@offset:dword
-USES EDI, EBX, ECX, ESI, EDX
-mov EAX, [@@Size]
+ARG @@array:dword, @@height:dword, @@offset:dword
+USES EAX, EDI, EBX, ECX, ESI, EDX
+mov EAX, [@@array]
 mov CX, [EAX]				;Aantal verikale loops
-mov EBX, [@@array]	;pointer naar gegeugen adres
+mov EBX, EAX				;pointer naar gegeugen adres
+add EBX, 4					;Skip de lijn met de groottes
 mov EDI, [@@height]
 mov EDI, [EDI]      ; beacause edi is a pointer to a height
 imul EDI, SCRWIDTH
@@ -98,7 +99,7 @@ add edi, 1					;Volgende reeks in videogeheugen
 add ebx, 1					;Volgende hex
 loop @@gohorizontal
 
-mov EAX, [@@Size]		;Zet ctr voor inner loop terug
+mov EAX, [@@array]		;Zet ctr voor inner loop terug
 mov ECX, EDX				;Zet ctr terug
 mov EDI, ESI				;Zet EDI terug
 add EDI, 80				;Volgende rij
@@ -186,10 +187,10 @@ PROC main
 	pop es
 	; Draw the floor and T-REX once
 	call drawFloor, offset Floor, offset SizeFloor, 50
-	call drawSprite, offset Trex, offset Size, offset PlayerHeight, 5
-	call drawSprite, offset SmallCactus, offset SizeSmallCactus, offset CactusHeight, 70
-	call drawSprite, offset LargeCactus, offset SizeLargeCactus, offset CactusHeight, 67
-	call drawSprite, offset Pterodactyl, offset SizePterodactyl, offset PterodactylHeight, 67
+	call drawSprite, offset Trex, offset PlayerHeight, 5
+	call drawSprite, offset SmallCactus, offset CactusHeight, 70
+	call drawSprite, offset LargeCactus, offset CactusHeight, 67
+	call drawSprite, offset Pterodactyl, offset PterodactylHeight, 67
 
 	gameLoop:
 		mov EAX, [PlayerHeight]
@@ -201,10 +202,10 @@ PROC main
 		call setVideoMode, 12h
 		pop es
 		call drawFloor, offset Floor, offset SizeFloor, 50
-		call drawSprite, offset Trex, offset Size, offset PlayerHeight, 5
-		call drawSprite, offset SmallCactus, offset SizeSmallCactus, offset CactusHeight, 70
-		call drawSprite, offset LargeCactus, offset SizeLargeCactus, offset CactusHeight, 67
-		call drawSprite, offset Pterodactyl, offset SizePterodactyl, offset PterodactylHeight, 67
+		call drawSprite, offset Trex, offset PlayerHeight, 5
+		call drawSprite, offset SmallCactus,offset CactusHeight, 70
+		call drawSprite, offset LargeCactus, offset CactusHeight, 67
+		call drawSprite, offset Pterodactyl, offset PterodactylHeight, 67
 		@@skipScreenUpdate:
 
 		; For testing
@@ -223,110 +224,110 @@ ENDP main
 
 DATASEG
 ; Drawing sprites
-Size DW  32, 4
-Trex DB 00H, 00H, 00H, 00H
-	 	 DB 00H, 00H, 03FH, 0FCH
-	 	 DB 00H, 00H, 03FH, 0FCH
-	 	 DB 00H, 00H, 0F3H, 0FFH
-	 	 DB 00H, 00H, 0F3H, 0FFH
-	   DB 00H, 00H, 0FFH, 0FFH
-		 DB 00H, 00H, 0FFH, 0FFH
-	 	 DB 00H, 00H, 0FFH, 00H
-		 DB 00H, 00H, 0FFH, 00H
-		 DB 00H, 00H, 0FFH, 0F0H
-		 DB 00H, 00H, 0FFH, 0F0H
-		 DB 0CH, 03H, 0FCH, 00H
-		 DB 0CH, 03H, 0FCH, 00H
-		 DB 0FH, 0FH, 0FFH, 0C0H
-		 DB 0FH, 0FH, 0FFH, 0C0H
-		 DB 0FH, 0FFH, 0FCH, 0C0H
-		 DB 0FH, 0FFH, 0FCH, 0C0H
-		 DB 0FH, 0FFH, 0FCH, 00H
-		 DB 0FH, 0FFH, 0FCH, 00H
-		 DB 03H, 0FFH, 0FCH, 00H
-		 DB 03H, 0FFH, 0FCH, 00H
-		 DB 00H, 0FFH, 0F0H, 00H
-		 DB 00H, 03FH, 0F0H, 00H
-		 DB 00H, 03FH, 0C0H, 00H
-		 DB 00H, 03FH, 0C0H, 00H
-		 DB 00H, 03CH, 0C0H, 00H
-		 DB 00H, 03CH, 0C0H, 00H
-		 DB 00H, 030H, 0C0H, 00H
-		 DB 00H, 030H, 0C0H, 00H
-		 DB 00H, 03CH, 0F0H, 00H
-		 DB 00H, 03CH, 0F0H, 00H
-		 DB 00H, 00H, 00H, 00H
+Trex 	DW  32, 4
+			DB 00H, 00H, 00H, 00H
+	 	 	DB 00H, 00H, 03FH, 0FCH
+	 	 	DB 00H, 00H, 03FH, 0FCH
+	 	 	DB 00H, 00H, 0F3H, 0FFH
+	 	 	DB 00H, 00H, 0F3H, 0FFH
+	   	DB 00H, 00H, 0FFH, 0FFH
+		 	DB 00H, 00H, 0FFH, 0FFH
+	 	 	DB 00H, 00H, 0FFH, 00H
+		 	DB 00H, 00H, 0FFH, 00H
+		 	DB 00H, 00H, 0FFH, 0F0H
+		 	DB 00H, 00H, 0FFH, 0F0H
+		 	DB 0CH, 03H, 0FCH, 00H
+		 	DB 0CH, 03H, 0FCH, 00H
+		 	DB 0FH, 0FH, 0FFH, 0C0H
+		 	DB 0FH, 0FH, 0FFH, 0C0H
+		 	DB 0FH, 0FFH, 0FCH, 0C0H
+		 	DB 0FH, 0FFH, 0FCH, 0C0H
+		 	DB 0FH, 0FFH, 0FCH, 00H
+		 	DB 0FH, 0FFH, 0FCH, 00H
+		 	DB 03H, 0FFH, 0FCH, 00H
+		 	DB 03H, 0FFH, 0FCH, 00H
+		 	DB 00H, 0FFH, 0F0H, 00H
+		 	DB 00H, 03FH, 0F0H, 00H
+		 	DB 00H, 03FH, 0C0H, 00H
+		 	DB 00H, 03FH, 0C0H, 00H
+		 	DB 00H, 03CH, 0C0H, 00H
+		 	DB 00H, 03CH, 0C0H, 00H
+		 	DB 00H, 030H, 0C0H, 00H
+		 	DB 00H, 030H, 0C0H, 00H
+		 	DB 00H, 03CH, 0F0H, 00H
+		 	DB 00H, 03CH, 0F0H, 00H
+		 	DB 00H, 00H, 00H, 00H
 
-SizeSmallCactus DW  32, 4
-SmallCactus DB 00H, 00H, 00H, 00H
-	 	 			 DB 00H, 00H, 00H, 00H
-	 	 	 		 DB 00H, 00H, 00H, 00H
-	 	 	 		 DB 00H, 00H, 00H, 00H
-	 	 	 		 DB 00H, 00H, 00H, 00H
-	   	 		 DB 00H, 00H, 00H, 00H
-		 		 	 DB 00H, 00H, 00H, 00H
-	 	 	 		 DB 00H, 00H, 00H, 00H
-		 		 	 DB 00H, 00H, 00H, 00H
-		 		 	 DB 00H, 00H, 00H, 00H
-		 		 	 DB 00H, 03H, 0C0H, 00H
-		 		 	 DB 00H, 03H, 0C0H, 00H
-		 		 	 DB 00H, 03H, 0CCH, 00H
-		 		 	 DB 00H, 03H, 0CCH, 00H
-		 		 	 DB 00H, 03H, 0CCH, 00H
-		 		 	 DB 00H, 03H, 0CCH, 00H
-		 		 	 DB 00H, 033H, 0CCH, 00H
-		 		 	 DB 00H, 033H, 0CCH, 00H
-		 		 	 DB 00H, 033H, 0FCH, 00H
-		 		 	 DB 00H, 033H, 0FCH, 00H
-		 		 	 DB 00H, 033H, 0C0H, 00H
-		 		 	 DB 00H, 033H, 0C0H, 00H
-		 		 	 DB 00H, 3FH, 0C0H, 00H
-		 		 	 DB 00H, 3FH, 0C0H, 00H
-		 		 	 DB 00H, 03H, 0C0H, 00H
-				 	 DB 00H, 03H, 0C0H, 00H
-				 	 DB 00H, 03H, 0C0H, 00H
-				 	 DB 00H, 03H, 0C0H, 00H
-				 	 DB 00H, 03H, 0C0H, 00H
-				 	 DB 00H, 03H, 0C0H, 00H
-				 	 DB 00H, 03H, 0C0H, 00H
-				 	 DB 00H, 03H, 0C0H, 00H
+SmallCactus DW  32, 4
+						DB 00H, 00H, 00H, 00H
+	 	 			 	DB 00H, 00H, 00H, 00H
+	 	 	 		 	DB 00H, 00H, 00H, 00H
+	 	 	 		 	DB 00H, 00H, 00H, 00H
+	 	 	 		 	DB 00H, 00H, 00H, 00H
+	   	 		 	DB 00H, 00H, 00H, 00H
+		 		 	 	DB 00H, 00H, 00H, 00H
+	 	 	 		 	DB 00H, 00H, 00H, 00H
+		 		 	 	DB 00H, 00H, 00H, 00H
+		 		 	 	DB 00H, 00H, 00H, 00H
+		 		 	 	DB 00H, 03H, 0C0H, 00H
+		 		 	 	DB 00H, 03H, 0C0H, 00H
+		 		 	 	DB 00H, 03H, 0CCH, 00H
+		 		 	 	DB 00H, 03H, 0CCH, 00H
+		 		 	 	DB 00H, 03H, 0CCH, 00H
+		 		 	 	DB 00H, 03H, 0CCH, 00H
+		 		 	 	DB 00H, 033H, 0CCH, 00H
+		 		 	 	DB 00H, 033H, 0CCH, 00H
+		 		 	 	DB 00H, 033H, 0FCH, 00H
+		 		 	 	DB 00H, 033H, 0FCH, 00H
+		 		 	 	DB 00H, 033H, 0C0H, 00H
+		 		 	 	DB 00H, 033H, 0C0H, 00H
+		 		 	 	DB 00H, 3FH, 0C0H, 00H
+		 		 	 	DB 00H, 3FH, 0C0H, 00H
+		 		 	 	DB 00H, 03H, 0C0H, 00H
+				 	 	DB 00H, 03H, 0C0H, 00H
+				 	 	DB 00H, 03H, 0C0H, 00H
+				 	 	DB 00H, 03H, 0C0H, 00H
+				 	 	DB 00H, 03H, 0C0H, 00H
+				 	 	DB 00H, 03H, 0C0H, 00H
+				 	 	DB 00H, 03H, 0C0H, 00H
+				 	 	DB 00H, 03H, 0C0H, 00H
 
-SizeLargeCactus DW  32, 4
-LargeCactus DB 00H, 00H, 00H, 00H
-					 DB 00H, 00H, 00H, 00H
-					 DB 00H, 00H, 00H, 00H
-					 DB 00H, 00H, 00H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 0F3H, 0CFH, 00H
-					 DB 00H, 0F3H, 0CFH, 00H
-					 DB 00H, 0F3H, 0CFH, 00H
-					 DB 00H, 0F3H, 0CFH, 00H
-					 DB 00H, 0F3H, 0CFH, 00H
-					 DB 00H, 0F3H, 0CFH, 00H
-					 DB 00H, 0F3H, 0CFH, 00H
-					 DB 00H, 0F3H, 0CFH, 00H
-					 DB 00H, 0FFH, 0FFH, 00H
-					 DB 00H, 0FFH, 0FFH, 00H
-					 DB 00H, 03FH, 0FCH, 00H
-					 DB 00H, 03FH, 0FCH, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
-					 DB 00H, 03H, 0C0H, 00H
+LargeCactus DW  32, 4
+						DB 00H, 00H, 00H, 00H
+					 	DB 00H, 00H, 00H, 00H
+					 	DB 00H, 00H, 00H, 00H
+					 	DB 00H, 00H, 00H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 0F3H, 0CFH, 00H
+					 	DB 00H, 0F3H, 0CFH, 00H
+					 	DB 00H, 0F3H, 0CFH, 00H
+					 	DB 00H, 0F3H, 0CFH, 00H
+					 	DB 00H, 0F3H, 0CFH, 00H
+					 	DB 00H, 0F3H, 0CFH, 00H
+					 	DB 00H, 0F3H, 0CFH, 00H
+					 	DB 00H, 0F3H, 0CFH, 00H
+					 	DB 00H, 0FFH, 0FFH, 00H
+					 	DB 00H, 0FFH, 0FFH, 00H
+					 	DB 00H, 03FH, 0FCH, 00H
+					 	DB 00H, 03FH, 0FCH, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
+					 	DB 00H, 03H, 0C0H, 00H
 
-SizePterodactyl DW  32, 4
-Pterodactyl DB 00H, 00H, 00H, 00H
+Pterodactyl DW  32, 4
+						DB 00H, 00H, 00H, 00H
 						DB 00H, 00H, 00H, 00H
 						DB 00H, 00H, 00H, 00H
 						DB 00H, 00H, 00H, 00H
