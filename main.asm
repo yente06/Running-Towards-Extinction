@@ -7,6 +7,7 @@ ASSUME cs:_TEXT,ds:FLAT,es:FLAT,fs:FLAT,gs:FLAT
 SCRWIDTH EQU 640	; Pixels scherm breedte
 SCRHEIGHT EQU 480   ;Pixels scherm hoogte
 VMEMADR EQU 0A0000h
+SPRITESIZE EQU 32*4+2+2
 
 CODESEG
 ;##FOR DEBUGGING##
@@ -77,9 +78,9 @@ ENDP drawFloor
 PROC drawSprite
 ARG @@array:dword, @@height:dword, @@offset:dword
 USES EAX, EDI, EBX, ECX, ESI, EDX
-mov EAX, [@@array]
+mov EAX, [@@array]  ;pointer naar sprite adres
 mov CX, [EAX]				;Aantal verikale loops
-mov EBX, EAX				;pointer naar gegeugen adres
+mov EBX, EAX				;pointer naar sprite adres
 add EBX, 4					;Skip de lijn met de groottes
 mov EDI, [@@height]
 mov EDI, [EDI]      ; beacause edi is a pointer to a height
@@ -106,6 +107,78 @@ add EDI, 80				;Volgende rij
 loop @@govertical
 ret
 ENDP drawSprite
+
+; opens file, returns file handle in ax
+PROC openFile
+ARG @@file:dword
+	USES eax, ebx, ecx, edx
+	mov al, 2 ; read only
+	mov edx, [@@file]
+	mov ah, 3dh
+	int 21h
+
+	jnc @@no_error ; carry flag is set if error occurs
+
+	call setVideoMode, 03h
+	mov  ah, 09h
+	mov  edx, offset openErrorMsg
+	int  21h
+
+	mov	ah,00h
+	int	16h
+	call terminateProcess
+
+@@no_error:
+	mov [filehandle], ax
+	ret
+ENDP openFile
+
+; closes file
+PROC closeFile
+	USES eax, ebx, ecx, edx
+	mov bx, [filehandle]
+	mov ah, 3Eh
+	int 21h
+
+	jnc @@no_error ; carry flag is set if error occurs
+
+	call setVideoMode, 03h
+	mov  ah, 09h
+	mov  edx, offset closeErrorMsg
+	int  21h
+
+	mov	ah,00h
+	int	16h
+	call terminateProcess
+
+@@no_error:
+	ret
+ENDP closeFile
+
+; reads chunk to buffer
+PROC readChunk
+ARG @@var:dword
+	USES eax, ebx, ecx, edx
+	mov bx, [filehandle]
+	mov cx, SPRITESIZE
+	mov edx, [@@var]
+	mov ah, 3fh
+	int 21h
+
+	jnc @@no_error ; carry flag is set if error occurs
+
+	call setVideoMode, 03h
+	mov  ah, 09h
+	mov  edx, offset readErrorMsg
+	int  21h
+
+	mov	ah,00h
+	int	16h
+	call terminateProcess
+
+@@no_error:
+	ret
+ENDP readChunk
 
 PROC generateRandomNumber ; Het gegenereerde getal komt terecht in [RandomState], gebaseerd op https://en.wikipedia.org/wiki/Xorshift, min val: 0, max val: 4294967295
 USES EAX, EDX, ECX
@@ -185,10 +258,32 @@ PROC main
 	push ds
 	call setVideoMode, 12h
 	pop es
-	; Draw the floor and T-REX once
+
+	; laadt alle sprites
+
+	;Trex
+	call openFile, offset TrexFile
+	call readChunk, offset Trex
+	call closeFile
+
+	;SmallCactus
+	call openFile, offset SmallCactusFile
+	call readChunk, offset SmallCactus
+	call closeFile
+
+	;LargeCactus
+	call openFile, offset LargeCactusFile
+	call readChunk, offset LargeCactus
+	call closeFile
+
+	;Pterodactyl
+	call openFile, offset PterodactylFile
+	call readChunk, offset Pterodactyl
+	call closeFile
+
 	call drawFloor, offset Floor, offset SizeFloor, 50
 	call drawSprite, offset Trex, offset PlayerHeight, 5
-	call drawSprite, offset SmallCactus, offset CactusHeight, 70
+	call drawSprite, offset SmallCactus,offset CactusHeight, 70
 	call drawSprite, offset LargeCactus, offset CactusHeight, 67
 	call drawSprite, offset Pterodactyl, offset PterodactylHeight, 67
 
@@ -224,142 +319,13 @@ ENDP main
 
 DATASEG
 ; Drawing sprites
-Trex 	DW  32, 4
-			DB 00H, 00H, 00H, 00H
-	 	 	DB 00H, 00H, 03FH, 0FCH
-	 	 	DB 00H, 00H, 03FH, 0FCH
-	 	 	DB 00H, 00H, 0F3H, 0FFH
-	 	 	DB 00H, 00H, 0F3H, 0FFH
-	   	DB 00H, 00H, 0FFH, 0FFH
-		 	DB 00H, 00H, 0FFH, 0FFH
-	 	 	DB 00H, 00H, 0FFH, 00H
-		 	DB 00H, 00H, 0FFH, 00H
-		 	DB 00H, 00H, 0FFH, 0F0H
-		 	DB 00H, 00H, 0FFH, 0F0H
-		 	DB 0CH, 03H, 0FCH, 00H
-		 	DB 0CH, 03H, 0FCH, 00H
-		 	DB 0FH, 0FH, 0FFH, 0C0H
-		 	DB 0FH, 0FH, 0FFH, 0C0H
-		 	DB 0FH, 0FFH, 0FCH, 0C0H
-		 	DB 0FH, 0FFH, 0FCH, 0C0H
-		 	DB 0FH, 0FFH, 0FCH, 00H
-		 	DB 0FH, 0FFH, 0FCH, 00H
-		 	DB 03H, 0FFH, 0FCH, 00H
-		 	DB 03H, 0FFH, 0FCH, 00H
-		 	DB 00H, 0FFH, 0F0H, 00H
-		 	DB 00H, 03FH, 0F0H, 00H
-		 	DB 00H, 03FH, 0C0H, 00H
-		 	DB 00H, 03FH, 0C0H, 00H
-		 	DB 00H, 03CH, 0C0H, 00H
-		 	DB 00H, 03CH, 0C0H, 00H
-		 	DB 00H, 030H, 0C0H, 00H
-		 	DB 00H, 030H, 0C0H, 00H
-		 	DB 00H, 03CH, 0F0H, 00H
-		 	DB 00H, 03CH, 0F0H, 00H
-		 	DB 00H, 00H, 00H, 00H
-
-SmallCactus DW  32, 4
-						DB 00H, 00H, 00H, 00H
-	 	 			 	DB 00H, 00H, 00H, 00H
-	 	 	 		 	DB 00H, 00H, 00H, 00H
-	 	 	 		 	DB 00H, 00H, 00H, 00H
-	 	 	 		 	DB 00H, 00H, 00H, 00H
-	   	 		 	DB 00H, 00H, 00H, 00H
-		 		 	 	DB 00H, 00H, 00H, 00H
-	 	 	 		 	DB 00H, 00H, 00H, 00H
-		 		 	 	DB 00H, 00H, 00H, 00H
-		 		 	 	DB 00H, 00H, 00H, 00H
-		 		 	 	DB 00H, 03H, 0C0H, 00H
-		 		 	 	DB 00H, 03H, 0C0H, 00H
-		 		 	 	DB 00H, 03H, 0CCH, 00H
-		 		 	 	DB 00H, 03H, 0CCH, 00H
-		 		 	 	DB 00H, 03H, 0CCH, 00H
-		 		 	 	DB 00H, 03H, 0CCH, 00H
-		 		 	 	DB 00H, 033H, 0CCH, 00H
-		 		 	 	DB 00H, 033H, 0CCH, 00H
-		 		 	 	DB 00H, 033H, 0FCH, 00H
-		 		 	 	DB 00H, 033H, 0FCH, 00H
-		 		 	 	DB 00H, 033H, 0C0H, 00H
-		 		 	 	DB 00H, 033H, 0C0H, 00H
-		 		 	 	DB 00H, 3FH, 0C0H, 00H
-		 		 	 	DB 00H, 3FH, 0C0H, 00H
-		 		 	 	DB 00H, 03H, 0C0H, 00H
-				 	 	DB 00H, 03H, 0C0H, 00H
-				 	 	DB 00H, 03H, 0C0H, 00H
-				 	 	DB 00H, 03H, 0C0H, 00H
-				 	 	DB 00H, 03H, 0C0H, 00H
-				 	 	DB 00H, 03H, 0C0H, 00H
-				 	 	DB 00H, 03H, 0C0H, 00H
-				 	 	DB 00H, 03H, 0C0H, 00H
-
-LargeCactus DW  32, 4
-						DB 00H, 00H, 00H, 00H
-					 	DB 00H, 00H, 00H, 00H
-					 	DB 00H, 00H, 00H, 00H
-					 	DB 00H, 00H, 00H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 0F3H, 0CFH, 00H
-					 	DB 00H, 0F3H, 0CFH, 00H
-					 	DB 00H, 0F3H, 0CFH, 00H
-					 	DB 00H, 0F3H, 0CFH, 00H
-					 	DB 00H, 0F3H, 0CFH, 00H
-					 	DB 00H, 0F3H, 0CFH, 00H
-					 	DB 00H, 0F3H, 0CFH, 00H
-					 	DB 00H, 0F3H, 0CFH, 00H
-					 	DB 00H, 0FFH, 0FFH, 00H
-					 	DB 00H, 0FFH, 0FFH, 00H
-					 	DB 00H, 03FH, 0FCH, 00H
-					 	DB 00H, 03FH, 0FCH, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-					 	DB 00H, 03H, 0C0H, 00H
-
-Pterodactyl DW  32, 4
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 00H, 00H, 00H
-						DB 00H, 020H, 00H, 00H
-						DB 00H, 030H, 00H, 00H
-						DB 00H, 038H, 00H, 00H
-						DB 00H, 03CH, 00H, 00H
-						DB 00H, 03EH, 00H, 00H
-						DB 00H, 03FH, 00H, 00H
-						DB 03H, 01FH, 080H, 00H
-						DB 07H, 01FH, 0C0H, 00H
-						DB 0FH, 09FH, 0E0H, 00H
-						DB 01FH, 0DFH, 0F0H, 00H
-						DB 03FH, 0DFH, 0F8H, 00H
-						DB 07FH, 0FFH, 0F8H, 00H
-						DB 07FH, 0FFH, 0FCH, 00H
-						DB 00H, 07FH, 0FFH, 0F8H
-						DB 00H, 03FH, 0FFH, 0FCH
-						DB 00H, 01FH, 0FFH, 080H
-						DB 00H, 0FH, 0FFH, 0F8H
-						DB 00H, 07H, 0FFH, 0E0H
-						DB 00H, 03H, 0FFH, 0C0H
-						DB 00H, 00H, 00H, 00H
-;Pterodactyl DB "Sprites/SizePterodactyl.bin", 0
+PterodactylFile db "ptero.bin", 0
+TrexFile db "trex.bin", 0
+SmallCactusFile db "smallcac.bin", 0
+LargeCactusFile db "largecac.bin", 0
+openErrorMsg db "could not open file", 13, 10, '$'
+readErrorMsg db "could not read data", 13, 10, '$'
+closeErrorMsg db "error during file closing", 13, 10, '$'
 
 
 SizeFloor DW 80
@@ -373,6 +339,20 @@ PlayerHeight DD 46
 CactusHeight DD 46
 PterodactylHeight DD 42
 JumpState DD 0
+
+UDATASEG
+filehandle dw ?
+
+Pterodactyl DW ?, ?
+		 				DB 128 DUP(?)
+Trex DW ?, ?
+		 DB 128 DUP(?)
+
+SmallCactus DW ?, ?
+		 				DB 128 DUP(?)
+
+LargeCactus	DW ?, ?
+		 				DB 128 DUP(?)
 
 STACK 100h
 

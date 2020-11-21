@@ -104,6 +104,10 @@ public class Main {
         }
         */
         System.out.print("HEX values:\n\n");
+        System.out.printf(integerToHex(sprite.length, 1)); // De hoogte
+        System.out.printf("00");
+        System.out.printf(integerToHex(sprite[0].length/8, 1)); // De breedte (/8 omdat de bits tot een byte worden gevormd)
+        System.out.printf("00");
         for (int i = 0; i < sprite.length; i++) {
             for (int j = 0; j < sprite[i].length; j+=8) {
                 int dec = 0;
@@ -114,8 +118,17 @@ public class Main {
                     }
                     dec = dec*2+bit;
                 }
-                System.out.print(Integer.toString(dec,16).toUpperCase());
+                System.out.printf(integerToHex(dec, 1));
             }
         }
+    }
+
+    static String integerToHex(int integer, int amountOfBytes){
+        String hex = Integer.toString(integer,16);
+        int amountOfHEXChars = amountOfBytes*2;
+        while (hex.length() < amountOfHEXChars){
+            hex = "0"+hex;
+        }
+        return hex.toUpperCase();
     }
 }
