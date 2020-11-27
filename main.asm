@@ -355,7 +355,7 @@ jmp @@skip
 ; Set sprite 3
 mov [EAX + Enemy.sprite], offset Pterodactyl
 mov [EAX + Enemy.y], 40
-mov [EAX + Enemy.top], 37
+mov [EAX + Enemy.top], 38
 mov [EAX + Enemy.bottom], 40
 mov [EAX + Enemy.score], 200
 @@skip:
