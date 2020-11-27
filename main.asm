@@ -305,7 +305,7 @@ jmp @@skip
 ; This enemy is not used (off the screen)
 mov EBX, [EDX + Enemy.score]
 add [player.score], EBX
-mov [EDX + Enemy.score], 0
+mov [EDX + Enemy.score], 0 ; So the score isn't added the next time if the object is not reused as another enemy
 cmp EAX, 0
 jne @@skip
 mov EAX, 1
