@@ -267,7 +267,7 @@ ret
 ENDP drawEnemy
 
 PROC updateEnemies ; Moves the enemies left and draws them if their x is not 0
-ARG @@arrayptr:dword, @@rarity:dword ; Rarity of spawning a new enemy
+ARG @@rarity:dword ; Rarity of spawning a new enemy
 USES EAX, EBX, ECX, EDX
 xor EAX, EAX ; We use EAX to detect if we already printed 1
 
@@ -278,8 +278,28 @@ mov EDX, offset enemies
 
 cmp [EDX + Enemy.x], 0
 je @@enemyNotUsed
+; Move the enemy
 dec [EDX + Enemy.x]
 call drawEnemy, EDX
+; Check for collision
+mov EBX, [player.x]
+cmp [EDX + Enemy.x], EBX
+jne @@skip
+; The enemy and the player have the same x coordinate
+; Check if high enough
+mov EBX, [player.y]
+cmp EBX, [EDX + Enemy.top]
+jl @@skip ; high enough
+;dec [player.lives]
+;jmp @@skip
+
+; Check if low enoughg
+@@checkBottom:
+mov EBX, [player.y]
+sub EBX, [player.heightOffset]
+cmp EBX, [EDX + Enemy.bottom]
+jg @@skip ; The player is low enough
+dec [player.lives]
 jmp @@skip
 @@enemyNotUsed:
 ; This enemy is not used (off the screen)
@@ -356,6 +376,15 @@ JZ  @@waitForBegin
 ret
 ENDP waitForFrame
 
+PROC displayScore
+USES EAX, EDX
+call printUnsignedInteger, [player.score]
+mov ah, 09h
+mov edx, offset NewLine
+int 21h
+ret
+ENDP displayScore
+
 
 PROC main
 	sti
@@ -399,11 +428,11 @@ PROC main
 		call setVideoMode, 12h
 		pop es
 		call drawFloor, offset Floor, offset SizeFloor, 50
-		call updateEnemies, offset enemiesLen, 50
+		call updateEnemies, 50
 		call drawPlayer, offset player
 
 		cmp [player.lives], 0 ; Stop the game if the player has no lives left
-		je terminate
+		je gameOver
 
 		;Wait for the current frame to be drawn
 		call waitForFrame
@@ -414,6 +443,8 @@ PROC main
 		je terminate	; Terminate if it is 'escape'
 	jmp gameLoop
 
+	gameOver:
+	call displayScore
 	mov ah,0h		; wait for keystroke
 	int 16h
 	terminate:
@@ -445,7 +476,7 @@ struc Player
 	x   dd 5  	  ; X position
 	y   dd 46     ; Y position
 	sprite dd ?   ; Pointer to the sprite
-	height dd 32 ; The current height
+	heightOffset dd 2 ; Amount of blank space above the player sprite
 	score dd 0
 	lives dd 1
 ends Player
