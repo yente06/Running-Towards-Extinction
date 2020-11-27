@@ -267,75 +267,38 @@ ret
 ENDP drawEnemy
 
 PROC updateEnemies ; Moves the enemies left and draws them if their x is not 0
-ARG @@rarity:dword ; Rarity of spawning a new enemy
-USES EAX, EBX
+ARG @@arrayptr:dword, @@rarity:dword ; Rarity of spawning a new enemy
+USES EAX, EBX, ECX, EDX
 xor EAX, EAX ; We use EAX to detect if we already printed 1
-; Updating positions
-cmp [enemy1.x], 0
-je @@enemy1NotUsed
-dec [enemy1.x]
-call drawEnemy, offset enemy1
-jmp @@checkEnemy2
-@@enemy1NotUsed:
-; This enemy is not used (off the screen)
-mov EBX, [enemy1.score]
-add [player.score], EBX
-cmp EAX, 0
-jne @@checkEnemy2
-mov EAX, 1
-call decideToSpawnEnemy, offset enemy1, [@@rarity]
 
-@@checkEnemy2:
-cmp [enemy2.x], 0
-je @@enemy2NotUsed
-dec [enemy2.x]
-call drawEnemy, offset enemy2
-jmp @@checkEnemy3
-@@enemy2NotUsed:
-; This enemy is not used (off the screen)
-mov EBX, [enemy2.score]
-add [player.score], EBX
-cmp EAX, 0
-jne @@checkEnemy3
-mov EAX, 1
-call decideToSpawnEnemy, offset enemy2, [@@rarity]
+mov ECX, [enemiesLen] ; Amount of enemies
+mov EDX, offset enemies
 
-@@checkEnemy3:
-cmp [enemy3.x], 0
-je @@enemy3NotUsed
-dec [enemy3.x]
-call drawEnemy, offset enemy3
-jmp @@checkEnemy4
-@@enemy3NotUsed:
-mov EBX, [enemy3.score]
-add [player.score], EBX
-; This enemy is not used (off the screen)
-cmp EAX, 0
-jne @@checkEnemy4
-mov EAX, 1
-call decideToSpawnEnemy, offset enemy3, [@@rarity]
+@@update:
 
-@@checkEnemy4:
-cmp [enemy4.x], 0
-je @@enemy4NotUsed
-dec [enemy4.x]
-call drawEnemy, offset enemy4
+cmp [EDX + Enemy.x], 0
+je @@enemyNotUsed
+dec [EDX + Enemy.x]
+call drawEnemy, EDX
 jmp @@skip
-@@enemy4NotUsed:
+@@enemyNotUsed:
 ; This enemy is not used (off the screen)
-mov EBX, [enemy4.score]
+mov EBX, [EDX + Enemy.score]
 add [player.score], EBX
 cmp EAX, 0
 jne @@skip
 mov EAX, 1
-call decideToSpawnEnemy, offset enemy4, [@@rarity]
+call decideToSpawnEnemy, EDX, [@@rarity]
+
 @@skip:
+add EDX, 24 ; Size of the Enemy struct
+loop @@update
 ret
 ENDP updateEnemies
 
 PROC decideToSpawnEnemy ; Generates 2 random numbers, 1 to decide if it want's to spawn an enemy and 1 to decide what enemy
 ARG @@enemy:dword, @@chance:dword ; Chance: 20 = 1 in 20
-USES EAX
+USES EAX, EDX
 call generateRandomNumber
 
 mov EAX, 4294967295 ; Max value of generateRandomNumber
@@ -436,7 +399,7 @@ PROC main
 		call setVideoMode, 12h
 		pop es
 		call drawFloor, offset Floor, offset SizeFloor, 50
-		call updateEnemies, 50
+		call updateEnemies, offset enemiesLen, 50
 		call drawPlayer, offset player
 
 		cmp [player.lives], 0 ; Stop the game if the player has no lives left
@@ -498,10 +461,8 @@ struc Enemy
 	score  dd ?  ; Score to gain when jumped
 ends Enemy
 
-enemy1 Enemy <>
-enemy2 Enemy <>
-enemy3 Enemy <>
-enemy4 Enemy <>
+enemiesLen dd 4
+enemies Enemy 4 DUP(<>)
 
 UDATASEG
 filehandle dw ?
