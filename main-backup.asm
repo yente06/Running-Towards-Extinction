@@ -10,6 +10,7 @@ VMEMADR EQU 0A0000h
 SPRITESIZE EQU 32*4+2+2
 
 CODESEG
+
 ;##FOR DEBUGGING##
 PROC printUnsignedInteger
 	ARG @@printval:dword
@@ -78,12 +79,12 @@ ENDP drawFloor
 PROC drawSprite
 ARG @@array:dword, @@height:dword, @@offset:dword
 USES EAX, EDI, EBX, ECX, ESI, EDX
-mov EAX, [@@array]
+mov EAX, [@@array]  ;pointer naar sprite adres
 mov CX, [EAX]				;Aantal verikale loops
 mov EBX, EAX				;pointer naar sprite adres
 add EBX, 4					;Skip de lijn met de groottes
 mov EDI, [@@height]
-;mov EDI, [EDI]      ; beacause edi is a pointer to a height
+mov EDI, [EDI]      ; beacause edi is a pointer to a height
 imul EDI, SCRWIDTH
 add EDI, VMEMADR
 add EDI, [@@offset]
@@ -245,26 +246,10 @@ sub EAX, 9    ; (x/[@@speed]-3)^(2)-9
 ; EAX now contains a negative number that we add to the current player height
 mov EDX, [PlayerGroundHeight]
 add EDX, EAX
-mov [player.y], EDX ; Updating the player height
+mov [PlayerHeight], EDX ; Updating the player height
 @@end:
 ret
 ENDP updateJump
-
-PROC drawPlayer
-ARG @@player:dword
-USES EAX
-mov EAX, [@@player]
-call drawSprite, [EAX + Player.sprite], [EAX + Player.y], [EAX + Player.x]
-ret
-ENDP drawPlayer
-
-PROC drawEnemy
-ARG @@enemy:dword
-USES EAX
-mov EAX, [@@enemy]
-call drawSprite, [EAX + Enemy.sprite], [EAX + Enemy.y], [EAX + Enemy.x]
-ret
-ENDP drawEnemy
 
 
 PROC main
@@ -281,52 +266,44 @@ PROC main
 	call openFile, offset TrexFile
 	call readChunk, offset Trex
 	call closeFile
-	mov [player.sprite], offset Trex
-
 
 	;SmallCactus
 	call openFile, offset SmallCactusFile
 	call readChunk, offset SmallCactus
 	call closeFile
-	mov [enemy1.sprite], offset SmallCactus
-	mov [enemy1.y], 46
 
 	;LargeCactus
 	call openFile, offset LargeCactusFile
 	call readChunk, offset LargeCactus
 	call closeFile
-	mov [enemy2.sprite], offset LargeCactus
-	mov [enemy2.y], 42
 
 	;Pterodactyl
 	call openFile, offset PterodactylFile
 	call readChunk, offset Pterodactyl
 	call closeFile
-	mov [enemy3.sprite], offset Pterodactyl
-	mov [enemy3.y], 38
 
 	; Start het spel met alle sprites die altijd op het scherm staan al te tekenen
 	call drawFloor, offset Floor, offset SizeFloor, 50
-	call drawPlayer, offset player
-	call drawEnemy, offset enemy1
-	call drawEnemy, offset enemy2
-	call drawEnemy, offset enemy3
+	call drawSprite, offset Trex, offset PlayerHeight, 5
+	;call drawSprite, offset SmallCactus,offset CactusHeight, 70
+	;call drawSprite, offset LargeCactus, offset CactusHeight, 67
+	;call drawSprite, offset Pterodactyl, offset PterodactylHeight, 67
 
   ; Start de game loop
 	gameLoop:
-		mov EAX, [player.y]
+		mov EAX, [PlayerHeight]
 		call updateJump, 25000
-		cmp EAX, [player.y]
+		cmp EAX, [PlayerHeight]
 		je @@skipScreenUpdate
 		; Update the screen only when necessary
 		push ds
 		call setVideoMode, 12h
 		pop es
 		call drawFloor, offset Floor, offset SizeFloor, 50
-		call drawPlayer, offset player
-		call drawEnemy, offset enemy1
-		call drawEnemy, offset enemy2
-		call drawEnemy, offset enemy3
+		call drawSprite, offset Trex, offset PlayerHeight, 5
+		;call drawSprite, offset SmallCactus,offset CactusHeight, 70
+		;call drawSprite, offset LargeCactus, offset CactusHeight, 67
+		;call drawSprite, offset Pterodactyl, offset PterodactylHeight, 67
 		@@skipScreenUpdate:
 
 		; For testing
@@ -361,31 +338,17 @@ RandomState DD 0; 1957386613 Binary: 111 0100 1010 1011 0101 1001 0111 0101
 NewLine db ' ', 13, 10, '$' ; 13, 10: newline, $: eindigd interrupt
 ;Jumping
 PlayerGroundHeight DD 46
+PlayerHeight DD 46
 CactusHeight DD 46
 PterodactylHeight DD 42
 JumpState DD 0
 
-struc Player
+struc player
+	height  dd 32 ; The current height
 	x   dd 5  	  ; X position
 	y   dd 46     ; Y position
-	sprite dd ?   ; Pointer to the sprite
-	height dd 32 ; The current height
-ends Player
-
-player Player <>
-
-struc Enemy
-	x   dd 76  	 ; X position
-	y   dd ?     ; Y position
-	sprite dd ?   ; Pointer to the sprite
-	top  dd ?    ; How high you need to be to dodge
-	bottom dd ?  ; How low you need to be to dodge
-	score  dd ?  ; Score to gain when jumped
-ends Enemy
-
-enemy1 Enemy <>
-enemy2 Enemy <>
-enemy3 Enemy <>
+	sprite db "trex.bin", 0
+ends player
 
 UDATASEG
 filehandle dw ?
@@ -400,6 +363,15 @@ SmallCactus DW ?, ?
 
 LargeCactus	DW ?, ?
 		 				DB 128 DUP(?)
+
+struc enemy1
+	top  dd ?    ; How high you need to be to dodge
+	bottom dd ?  ; How low you need to be to dodge
+	x   dd ?  	 ; X position
+	y   dd ?     ; Y position
+	sprite dd ?  ; Address of the sprite
+	score  dd ?  ; Score to gain when jumped
+ends enemy1
 
 STACK 100h
 
