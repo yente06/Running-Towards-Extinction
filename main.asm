@@ -305,6 +305,7 @@ jmp @@skip
 ; This enemy is not used (off the screen)
 mov EBX, [EDX + Enemy.score]
 add [player.score], EBX
+mov [EDX + Enemy.score], 0
 cmp EAX, 0
 jne @@skip
 mov EAX, 1
