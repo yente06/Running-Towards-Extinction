@@ -266,6 +266,133 @@ call drawSprite, [EAX + Enemy.sprite], [EAX + Enemy.y], [EAX + Enemy.x]
 ret
 ENDP drawEnemy
 
+PROC updateEnemies ; Moves the enemies left and draws them if their x is not 0
+ARG @@rarity:dword ; Rarity of spawning a new enemy
+USES EAX, EBX
+xor EAX, EAX ; We use EAX to detect if we already printed 1
+; Updating positions
+cmp [enemy1.x], 0
+je @@enemy1NotUsed
+dec [enemy1.x]
+call drawEnemy, offset enemy1
+jmp @@checkEnemy2
+@@enemy1NotUsed:
+; This enemy is not used (off the screen)
+mov EBX, [enemy1.score]
+add [player.score], EBX
+cmp EAX, 0
+jne @@checkEnemy2
+mov EAX, 1
+call decideToSpawnEnemy, offset enemy1, [@@rarity]
+
+@@checkEnemy2:
+cmp [enemy2.x], 0
+je @@enemy2NotUsed
+dec [enemy2.x]
+call drawEnemy, offset enemy2
+jmp @@checkEnemy3
+@@enemy2NotUsed:
+; This enemy is not used (off the screen)
+mov EBX, [enemy2.score]
+add [player.score], EBX
+cmp EAX, 0
+jne @@checkEnemy3
+mov EAX, 1
+call decideToSpawnEnemy, offset enemy2, [@@rarity]
+
+@@checkEnemy3:
+cmp [enemy3.x], 0
+je @@enemy3NotUsed
+dec [enemy3.x]
+call drawEnemy, offset enemy3
+jmp @@checkEnemy4
+@@enemy3NotUsed:
+mov EBX, [enemy3.score]
+add [player.score], EBX
+; This enemy is not used (off the screen)
+cmp EAX, 0
+jne @@checkEnemy4
+mov EAX, 1
+call decideToSpawnEnemy, offset enemy3, [@@rarity]
+
+@@checkEnemy4:
+cmp [enemy4.x], 0
+je @@enemy4NotUsed
+dec [enemy4.x]
+call drawEnemy, offset enemy4
+jmp @@skip
+@@enemy4NotUsed:
+; This enemy is not used (off the screen)
+mov EBX, [enemy4.score]
+add [player.score], EBX
+cmp EAX, 0
+jne @@skip
+mov EAX, 1
+call decideToSpawnEnemy, offset enemy4, [@@rarity]
+@@skip:
+ret
+ENDP updateEnemies
+
+PROC decideToSpawnEnemy ; Generates 2 random numbers, 1 to decide if it want's to spawn an enemy and 1 to decide what enemy
+ARG @@enemy:dword, @@chance:dword ; Chance: 20 = 1 in 20
+USES EAX
+call generateRandomNumber
+
+mov EAX, 4294967295 ; Max value of generateRandomNumber
+xor EDX, EDX  ; Set EDX to zero before division
+div [@@chance]
+cmp [RandomState], EAX
+ja @@skip ; above for unsigned integers
+
+; The random number was within out chance margin
+mov EAX, [@@enemy]
+mov [EAX + Enemy.x], 76 ; Begin point
+; Randomly choosing from 3 sprites
+call generateRandomNumber
+cmp [RandomState], 1431655765
+jae @@sprite2 ; Above or equal for unsigned integers
+; Set sprite 1
+mov [EAX + Enemy.sprite], offset SmallCactus
+mov [EAX + Enemy.y], 46
+mov [EAX + Enemy.top], 43
+mov [EAX + Enemy.bottom], 46
+mov [EAX + Enemy.score], 50
+jmp @@skip
+@@sprite2:
+cmp [RandomState], 2863311530
+jae @@sprite3 ; Above or equal for unsigned integers
+; Set sprite 2
+mov [EAX + Enemy.sprite], offset LargeCactus
+mov [EAX + Enemy.y], 46
+mov [EAX + Enemy.top], 43
+mov [EAX + Enemy.bottom], 46
+mov [EAX + Enemy.score], 100
+jmp @@skip
+@@sprite3:
+; Set sprite 3
+mov [EAX + Enemy.sprite], offset Pterodactyl
+mov [EAX + Enemy.y], 40
+mov [EAX + Enemy.top], 37
+mov [EAX + Enemy.bottom], 40
+mov [EAX + Enemy.score], 200
+@@skip:
+ret
+ENDP decideToSpawnEnemy
+
+PROC waitForFrame
+USES EAX, EDX
+MOV  DX, 03DAH      ; VGA status port
+@@waitForEnd:
+IN  AL, DX
+AND AL, 8           ; third bit is set during VBI
+JNZ @@waitForEnd
+@@waitForBegin:
+IN  AL, DX
+AND AL, 8
+JZ  @@waitForBegin
+ret
+ENDP waitForFrame
+
 
 PROC main
 	sti
@@ -283,53 +410,41 @@ PROC main
 	call closeFile
 	mov [player.sprite], offset Trex
 
-
 	;SmallCactus
 	call openFile, offset SmallCactusFile
 	call readChunk, offset SmallCactus
 	call closeFile
-	mov [enemy1.sprite], offset SmallCactus
-	mov [enemy1.y], 46
 
 	;LargeCactus
 	call openFile, offset LargeCactusFile
 	call readChunk, offset LargeCactus
 	call closeFile
-	mov [enemy2.sprite], offset LargeCactus
-	mov [enemy2.y], 42
 
 	;Pterodactyl
 	call openFile, offset PterodactylFile
 	call readChunk, offset Pterodactyl
 	call closeFile
-	mov [enemy3.sprite], offset Pterodactyl
-	mov [enemy3.y], 38
 
 	; Start het spel met alle sprites die altijd op het scherm staan al te tekenen
 	call drawFloor, offset Floor, offset SizeFloor, 50
 	call drawPlayer, offset player
-	call drawEnemy, offset enemy1
-	call drawEnemy, offset enemy2
-	call drawEnemy, offset enemy3
 
   ; Start de game loop
 	gameLoop:
-		mov EAX, [player.y]
-		call updateJump, 25000
-		cmp EAX, [player.y]
-		je @@skipScreenUpdate
-		; Update the screen only when necessary
+		call updateJump, 4
 		push ds
 		call setVideoMode, 12h
 		pop es
 		call drawFloor, offset Floor, offset SizeFloor, 50
+		call updateEnemies, 50
 		call drawPlayer, offset player
-		call drawEnemy, offset enemy1
-		call drawEnemy, offset enemy2
-		call drawEnemy, offset enemy3
-		@@skipScreenUpdate:
 
-		; For testing
+		cmp [player.lives], 0 ; Stop the game if the player has no lives left
+		je terminate
+
+		;Wait for the current frame to be drawn
+		call waitForFrame
+
 		mov ah,01h		; wait for keystroke
 		int 16h
 		cmp al, 27    ; Check if it is 'escape'
@@ -361,8 +476,6 @@ RandomState DD 0; 1957386613 Binary: 111 0100 1010 1011 0101 1001 0111 0101
 NewLine db ' ', 13, 10, '$' ; 13, 10: newline, $: eindigd interrupt
 ;Jumping
 PlayerGroundHeight DD 46
-CactusHeight DD 46
-PterodactylHeight DD 42
 JumpState DD 0
 
 struc Player
@@ -370,12 +483,14 @@ struc Player
 	y   dd 46     ; Y position
 	sprite dd ?   ; Pointer to the sprite
 	height dd 32 ; The current height
+	score dd 0
+	lives dd 1
 ends Player
 
 player Player <>
 
 struc Enemy
-	x   dd 76  	 ; X position
+	x   dd 0  	 ; X position
 	y   dd ?     ; Y position
 	sprite dd ?   ; Pointer to the sprite
 	top  dd ?    ; How high you need to be to dodge
@@ -386,6 +501,7 @@ ends Enemy
 enemy1 Enemy <>
 enemy2 Enemy <>
 enemy3 Enemy <>
+enemy4 Enemy <>
 
 UDATASEG
 filehandle dw ?
