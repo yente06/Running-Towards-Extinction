@@ -217,7 +217,7 @@ mov ah,01h		; wait for keystroke
 int 16h
 jz @@checkToUncrouch
 mov ah, 00h
-cmp al, 08
+cmp al, 8
 jne @@gotoEnd
 cmp [player.crouching], 0 ; was niet aan het bukken
 je @@changeTocrouching
@@ -232,7 +232,7 @@ jmp @@gotoEnd
 @@checkToUncrouch:
 cmp [player.crouching], 1 ; check if it is crouching
 jne @@gotoEnd
-cmp [player.crouchTime], 15
+cmp [player.crouchTime], 25 ;change this value when crouch needs to be longer
 je @@changeToUncrouch    ;check if it needs to stop crouching
 mov eax, [player.crouchTime]
 add eax, 1
