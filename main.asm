@@ -210,6 +210,44 @@ mov [RandomState], EAX
 ret
 ENDP generateRandomNumber
 
+PROC updateCrouching
+ARG @@player:dword
+USES eax
+mov ah,01h		; wait for keystroke
+int 16h
+jz @@checkToUncrouch
+mov ah, 00h
+cmp al, 08
+jne @@gotoEnd
+cmp [player.crouching], 0 ; was niet aan het bukken
+je @@changeTocrouching
+cmp [player.crouching], 1 ; was nog al aan het bukken
+je @@checkToUncrouch
+
+@@changeTocrouching:
+mov [player.crouching], 1
+mov [player.sprite], offset TrexCrouching
+jmp @@gotoEnd
+
+@@checkToUncrouch:
+cmp [player.crouching], 1 ; check if it is crouching
+jne @@gotoEnd
+cmp [player.crouchTime], 15
+je @@changeToUncrouch    ;check if it needs to stop crouching
+mov eax, [player.crouchTime]
+add eax, 1
+mov [player.crouchTime], eax
+jmp @@gotoEnd
+
+@@changeToUncrouch:
+mov [player.crouching], 0
+mov [player.crouchTime], 0
+mov [player.sprite], offset Trex
+
+@@gotoEnd:
+ret
+ENDP updateCrouching
+
 PROC updateJump
 ARG @@speed:dword
 USES EAX, EDX, ECX, EBX
@@ -405,7 +443,7 @@ PROC main
 
 	;TrexCrouching
 	call openFile, offset TrexCrouchingFile
-	call readChunk, offset Trex
+	call readChunk, offset TrexCrouching
 	call closeFile
 
 	;SmallCactus
@@ -429,6 +467,7 @@ PROC main
 
   ; Start de game loop
 	gameLoop:
+		call updateCrouching, offset player
 		call updateJump, 4
 		push ds
 		call setVideoMode, 12h
@@ -485,7 +524,8 @@ struc Player
 	sprite dd ?   ; Pointer to the sprite
 	heightOffset dd 2 ; Amount of blank space above the player sprite
 	score dd 0
-	ducking dd 0
+	crouching dd 0
+	crouchTime dd 0
 	lives dd 1
 ends Player
 
