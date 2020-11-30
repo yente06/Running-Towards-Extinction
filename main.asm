@@ -403,6 +403,11 @@ PROC main
 	call closeFile
 	mov [player.sprite], offset Trex
 
+	;TrexCrouching
+	call openFile, offset TrexCrouchingFile
+	call readChunk, offset Trex
+	call closeFile
+
 	;SmallCactus
 	call openFile, offset SmallCactusFile
 	call readChunk, offset SmallCactus
@@ -456,6 +461,7 @@ ENDP main
 DATASEG
 ; Drawing sprites
 PterodactylFile db "ptero.bin", 0
+TrexCrouchingFile db "trcrouch.bin", 0
 TrexFile db "trex.bin", 0
 SmallCactusFile db "smallcac.bin", 0
 LargeCactusFile db "largecac.bin", 0
@@ -479,6 +485,7 @@ struc Player
 	sprite dd ?   ; Pointer to the sprite
 	heightOffset dd 2 ; Amount of blank space above the player sprite
 	score dd 0
+	ducking dd 0
 	lives dd 1
 ends Player
 
@@ -503,6 +510,9 @@ Pterodactyl DW ?, ?
 		 				DB 128 DUP(?)
 Trex DW ?, ?
 		 DB 128 DUP(?)
+
+TrexCrouching DW ?,?
+							DB 128 DUP(?)
 
 SmallCactus DW ?, ?
 		 				DB 128 DUP(?)
