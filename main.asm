@@ -213,7 +213,7 @@ mov [RandomState], EAX
 ret
 ENDP generateRandomNumber
 
-PROC isKeyPressed
+PROC isKeyPressed				;Checks if the key is pressed
 ARG @@keyHex: dword
 USES EBX
 mov EAX, [@@keyHex]
@@ -229,9 +229,9 @@ USES eax, ebx, ecx
 mov ecx, [player.crouching]
 call isKeyPressed, 1DH
 
-cmp eax, 0
+cmp eax, 0											;Uncrouch when key is not pressed
 je @@unCrouch
-cmp ecx, 1
+cmp ecx, 1											;if 1, already crouching
 je @@gotoEnd
 mov [player.crouching], 1				; Moet bukken
 mov EBX, [player.crouchOffset]
@@ -239,7 +239,7 @@ mov [player.heightOffset], EBX
 jmp @@gotoEnd
 
 @@unCrouch:
-cmp ecx, 0
+cmp ecx, 0											;Release crouch, already standing up
 je @@gotoEnd
 mov [player.crouching], 0				;Mag niet bukken
 mov EBX, [player.defaultOffset]
@@ -294,11 +294,11 @@ mov EBX, [EAX + Player.crouching]
 
 cmp EBX, 1
 je @@drawCrouch
-call drawSprite, [EAX + Player.defaultSprite], [EAX + Player.y], [EAX + Player.x]
+call drawSprite, [EAX + Player.defaultSprite], [EAX + Player.y], [EAX + Player.x]		;draw sprite default
 jmp @@end
 
 @@drawCrouch:
-call drawSprite, [EAX + Player.crouchSprite], [EAX + Player.y], [EAX + Player.x]
+call drawSprite, [EAX + Player.crouchSprite], [EAX + Player.y], [EAX + Player.x]		;draw crouch sprite
 
 @@end:
 ret
@@ -401,9 +401,9 @@ jmp @@skip
 @@sprite3:
 ; Set sprite 3
 mov [EAX + Enemy.sprite], offset Pterodactyl
-mov [EAX + Enemy.y], 40
-mov [EAX + Enemy.top], 38
-mov [EAX + Enemy.bottom], 40
+mov [EAX + Enemy.y], 43
+mov [EAX + Enemy.top], 41
+mov [EAX + Enemy.bottom], 43
 mov [EAX + Enemy.score], 200
 @@skip:
 ret
@@ -500,8 +500,12 @@ PROC main
 
 	gameOver:
 	call displayScore
-	mov ah,0h		; wait for keystroke
-	int 16h
+	;Checking if user presses escape and ending program when he did
+	checkEsc:
+	call isKeyPressed, 01h
+	cmp eax, 0
+	je checkEsc
+
 	terminate:
 	call __keyb_uninstallKeyboardHandler
 	call terminateProcess
@@ -534,9 +538,9 @@ struc Player
 	y   dd 46     ; Y position
 	defaultSprite dd ?   ; Pointer to the sprite
 	crouchSprite dd ?
-	heightOffset dd 2 ; Amount of blank space above the player sprite
-	defaultOffset dd 2
-	crouchOffset dd 1
+	heightOffset dd 4 ; Amount of blank space above the player sprite
+	defaultOffset dd 4
+	crouchOffset dd 2
 	score dd 0
 	crouching dd 0
 	lives dd 1
