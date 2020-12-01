@@ -7,7 +7,10 @@ ASSUME cs:_TEXT,ds:FLAT,es:FLAT,fs:FLAT,gs:FLAT
 SCRWIDTH EQU 640	; Pixels scherm breedte
 SCRHEIGHT EQU 480   ;Pixels scherm hoogte
 VMEMADR EQU 0A0000h
+KEY_BUFFER	EQU 60h
 SPRITESIZE EQU 32*4+2+2
+
+INCLUDE "keyb.inc"
 
 CODESEG
 ;##FOR DEBUGGING##
@@ -210,39 +213,37 @@ mov [RandomState], EAX
 ret
 ENDP generateRandomNumber
 
+PROC isKeyPressed
+ARG @@keyHex: dword
+USES EBX
+mov EAX, [@@keyHex]
+mov bl, [offset __keyb_keyboardState + EAX]
+xor eax, eax
+sub ax, bx
+ret
+ENDP isKeyPressed
+
 PROC updateCrouching
 ARG @@player:dword
-USES eax
-mov ah,01h		; wait for keystroke
-int 16h
-jz @@checkToUncrouch
-mov ah, 00h
-cmp al, 8
-jne @@gotoEnd
-cmp [player.crouching], 0 ; was niet aan het bukken
-je @@changeTocrouching
-cmp [player.crouching], 1 ; was nog al aan het bukken
-je @@checkToUncrouch
+USES eax, ebx, ecx
+mov ecx, [player.crouching]
+call isKeyPressed, 1DH
 
-@@changeTocrouching:
-mov [player.crouching], 1
-mov [player.sprite], offset TrexCrouching
+cmp eax, 0
+je @@unCrouch
+cmp ecx, 1
+je @@gotoEnd
+mov [player.crouching], 1				; Moet bukken
+mov EBX, [player.crouchOffset]
+mov [player.heightOffset], EBX
 jmp @@gotoEnd
 
-@@checkToUncrouch:
-cmp [player.crouching], 1 ; check if it is crouching
-jne @@gotoEnd
-cmp [player.crouchTime], 25 ;change this value when crouch needs to be longer
-je @@changeToUncrouch    ;check if it needs to stop crouching
-mov eax, [player.crouchTime]
-add eax, 1
-mov [player.crouchTime], eax
-jmp @@gotoEnd
-
-@@changeToUncrouch:
-mov [player.crouching], 0
-mov [player.crouchTime], 0
-mov [player.sprite], offset Trex
+@@unCrouch:
+cmp ecx, 0
+je @@gotoEnd
+mov [player.crouching], 0				;Mag niet bukken
+mov EBX, [player.defaultOffset]
+mov [player.heightOffset], EBX
 
 @@gotoEnd:
 ret
@@ -251,13 +252,10 @@ ENDP updateCrouching
 PROC updateJump
 ARG @@speed:dword
 USES EAX, EDX, ECX, EBX
-mov ah,01h		; wait for keystroke
-int 16h
-jz @@checkIfInAir      ; Skip if there is no keyboard input
-mov ah, 00h
-int 16h       ; Get the key and clear the keyboard buffer
-cmp al, 32    ; Check if it is space
-je @@update			; Skip if it's not space
+
+call isKeyPressed, 39h
+cmp eax,0
+jne @@update
 
 @@checkIfInAir:
 mov EAX, [JumpState]
@@ -290,9 +288,19 @@ ENDP updateJump
 
 PROC drawPlayer
 ARG @@player:dword
-USES EAX
+USES EAX, EBX
 mov EAX, [@@player]
-call drawSprite, [EAX + Player.sprite], [EAX + Player.y], [EAX + Player.x]
+mov EBX, [EAX + Player.crouching]
+
+cmp EBX, 1
+je @@drawCrouch
+call drawSprite, [EAX + Player.defaultSprite], [EAX + Player.y], [EAX + Player.x]
+jmp @@end
+
+@@drawCrouch:
+call drawSprite, [EAX + Player.crouchSprite], [EAX + Player.y], [EAX + Player.x]
+
+@@end:
 ret
 ENDP drawPlayer
 
@@ -433,18 +441,20 @@ PROC main
 	call setVideoMode, 12h
 	pop es
 
+	call __keyb_installKeyboardHandler
 	; laadt alle sprites
 
 	;Trex
 	call openFile, offset TrexFile
 	call readChunk, offset Trex
 	call closeFile
-	mov [player.sprite], offset Trex
+	mov [player.defaultSprite], offset Trex
 
 	;TrexCrouching
 	call openFile, offset TrexCrouchingFile
 	call readChunk, offset TrexCrouching
 	call closeFile
+	mov [player.crouchSprite], offset TrexCrouching
 
 	;SmallCactus
 	call openFile, offset SmallCactusFile
@@ -482,10 +492,10 @@ PROC main
 		;Wait for the current frame to be drawn
 		call waitForFrame
 
-		mov ah,01h		; wait for keystroke
-		int 16h
-		cmp al, 27    ; Check if it is 'escape'
-		je terminate	; Terminate if it is 'escape'
+
+		call isKeyPressed, 01h
+		cmp eax, 0
+		jne terminate
 	jmp gameLoop
 
 	gameOver:
@@ -493,6 +503,7 @@ PROC main
 	mov ah,0h		; wait for keystroke
 	int 16h
 	terminate:
+	call __keyb_uninstallKeyboardHandler
 	call terminateProcess
 
 ENDP main
@@ -521,11 +532,13 @@ JumpState DD 0
 struc Player
 	x   dd 5  	  ; X position
 	y   dd 46     ; Y position
-	sprite dd ?   ; Pointer to the sprite
+	defaultSprite dd ?   ; Pointer to the sprite
+	crouchSprite dd ?
 	heightOffset dd 2 ; Amount of blank space above the player sprite
+	defaultOffset dd 2
+	crouchOffset dd 1
 	score dd 0
 	crouching dd 0
-	crouchTime dd 0
 	lives dd 1
 ends Player
 
