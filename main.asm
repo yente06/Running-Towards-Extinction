@@ -160,10 +160,10 @@ ENDP closeFile
 
 ; reads chunk to buffer
 PROC readChunk
-ARG @@var:dword
+ARG @@var:dword, @@size: dword
 	USES eax, ebx, ecx, edx
 	mov bx, [filehandle]
-	mov cx, SPRITESIZE
+	mov ecx, [@@size]
 	mov edx, [@@var]
 	mov ah, 3fh
 	int 21h
@@ -424,9 +424,19 @@ ret
 ENDP waitForFrame
 
 PROC displayScore
-USES EAX, EDX
-call printUnsignedInteger, [player.score]
+USES EDX
 mov ah, 09h
+mov edx, offset scoreText
+int 21h
+
+call printUnsignedInteger, [player.score]
+mov edx, offset NewLine
+int 21h
+
+mov edx, offset highestScoreText
+int 21h
+
+call printUnsignedInteger, [player.highscore]
 mov edx, offset NewLine
 int 21h
 ret
@@ -446,30 +456,40 @@ PROC main
 
 	;Trex
 	call openFile, offset TrexFile
-	call readChunk, offset Trex
+	call readChunk, offset Trex, SPRITESIZE
 	call closeFile
 	mov [player.defaultSprite], offset Trex
 
 	;TrexCrouching
 	call openFile, offset TrexCrouchingFile
-	call readChunk, offset TrexCrouching
+	call readChunk, offset TrexCrouching, SPRITESIZE
 	call closeFile
 	mov [player.crouchSprite], offset TrexCrouching
 
 	;SmallCactus
 	call openFile, offset SmallCactusFile
-	call readChunk, offset SmallCactus
+	call readChunk, offset SmallCactus, SPRITESIZE
 	call closeFile
 
 	;LargeCactus
 	call openFile, offset LargeCactusFile
-	call readChunk, offset LargeCactus
+	call readChunk, offset LargeCactus,SPRITESIZE
 	call closeFile
 
 	;Pterodactyl
 	call openFile, offset PterodactylFile
-	call readChunk, offset Pterodactyl
+	call readChunk, offset Pterodactyl, SPRITESIZE
 	call closeFile
+
+	;Highestscore
+	call openFile, offset HighestScoreFile
+	call readChunk, offset HighestScore, 1
+	call closeFile
+	mov EBX, [offset HighestScore]
+	mov eax, [ebx]
+	mov [player.highscore], EAX
+	xor eax, eax
+	xor ebx, ebx
 
 	; Start het spel met alle sprites die altijd op het scherm staan al te tekenen
 	call drawFloor, offset Floor, offset SizeFloor, 50
@@ -489,6 +509,8 @@ PROC main
 		cmp [player.lives], 0 ; Stop the game if the player has no lives left
 		je gameOver
 
+		call displayScore
+
 		;Wait for the current frame to be drawn
 		call waitForFrame
 
@@ -500,6 +522,13 @@ PROC main
 
 	gameOver:
 	call displayScore
+	call openFile, offset HighestScoreFile
+	mov  ah, 40h
+  mov  bx, [filehandle]
+  mov  cx, 5  ;STRING LENGTH.
+  mov  edx, [player.score]
+  int  21h
+	call closeFile
 	;Checking if user presses escape and ending program when he did
 	checkEsc:
 	call isKeyPressed, 01h
@@ -516,12 +545,15 @@ DATASEG
 ; Drawing sprites
 PterodactylFile db "ptero.bin", 0
 TrexCrouchingFile db "trcrouch.bin", 0
-TrexFile db "trex.bin", 0
+TrexFile db "trex.bin", 00
 SmallCactusFile db "smallcac.bin", 0
 LargeCactusFile db "largecac.bin", 0
+HighestScoreFile db "higscore.txt", 0
 openErrorMsg db "could not open file", 13, 10, '$'
 readErrorMsg db "could not read data", 13, 10, '$'
 closeErrorMsg db "error during file closing", 13, 10, '$'
+scoreText db "Score: ", 0, '$'
+highestScoreText db "High score: ", 0, '$'
 
 
 SizeFloor DW 80
@@ -542,6 +574,7 @@ struc Player
 	defaultOffset dd 4
 	crouchOffset dd 2
 	score dd 0
+	highscore dd ?
 	crouching dd 0
 	lives dd 1
 ends Player
@@ -576,6 +609,8 @@ SmallCactus DW ?, ?
 
 LargeCactus	DW ?, ?
 		 				DB 128 DUP(?)
+
+HighestScore dw ?
 
 STACK 100h
 
