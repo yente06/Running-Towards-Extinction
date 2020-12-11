@@ -9,6 +9,7 @@ SCRHEIGHT EQU 480   ;Pixels scherm hoogte
 VMEMADR EQU 0A0000h
 KEY_BUFFER	EQU 60h
 SPRITESIZE EQU 32*4+2+2
+SCORESIZE EQU 4 ; DD has the size of 4 bytes
 
 INCLUDE "keyb.inc"
 
@@ -424,7 +425,7 @@ ret
 ENDP waitForFrame
 
 PROC displayScore
-USES EDX
+USES EAX, EBX, EDX
 mov ah, 09h
 mov edx, offset scoreText
 int 21h
@@ -436,11 +437,35 @@ int 21h
 mov edx, offset highestScoreText
 int 21h
 
+mov ebx, [player.highscore]
+cmp ebx, [player.score]
+jge @@printHighScore ; Print highscore if the score is smaller than the highscore
+call printUnsignedInteger, [player.score]
+jmp @@newline
+@@printHighScore:
 call printUnsignedInteger, [player.highscore]
+@@newline:
 mov edx, offset NewLine
 int 21h
 ret
 ENDP displayScore
+
+PROC saveHighScore
+USES EAX, EBX, ECX, EDX
+mov ebx, [player.highscore]
+cmp ebx, [player.score]
+jge @@skip ; Don't save if the score is smaller than the highscore
+xor ebx, ebx
+call openFile, offset HighestScoreFile
+mov  ah, 40h
+mov  bx, [filehandle]
+mov  cx, SCORESIZE  ;STRING LENGTH.
+mov  edx, offset player.score
+int  21h
+call closeFile
+@@skip:
+ret
+ENDP saveHighScore
 
 
 PROC main
@@ -483,13 +508,8 @@ PROC main
 
 	;Highestscore
 	call openFile, offset HighestScoreFile
-	call readChunk, offset HighestScore, 1
+	call readChunk, offset player.highscore, SCORESIZE
 	call closeFile
-	mov EBX, [offset HighestScore]
-	mov eax, [ebx]
-	mov [player.highscore], EAX
-	xor eax, eax
-	xor ebx, ebx
 
 	; Start het spel met alle sprites die altijd op het scherm staan al te tekenen
 	call drawFloor, offset Floor, offset SizeFloor, 50
@@ -522,13 +542,6 @@ PROC main
 
 	gameOver:
 	call displayScore
-	call openFile, offset HighestScoreFile
-	mov  ah, 40h
-  mov  bx, [filehandle]
-  mov  cx, 5  ;STRING LENGTH.
-  mov  edx, [player.score]
-  int  21h
-	call closeFile
 	;Checking if user presses escape and ending program when he did
 	checkEsc:
 	call isKeyPressed, 01h
@@ -536,6 +549,7 @@ PROC main
 	je checkEsc
 
 	terminate:
+	call saveHighScore
 	call __keyb_uninstallKeyboardHandler
 	call terminateProcess
 
@@ -548,7 +562,7 @@ TrexCrouchingFile db "trcrouch.bin", 0
 TrexFile db "trex.bin", 00
 SmallCactusFile db "smallcac.bin", 0
 LargeCactusFile db "largecac.bin", 0
-HighestScoreFile db "higscore.txt", 0
+HighestScoreFile db "higscore.bin", 0
 openErrorMsg db "could not open file", 13, 10, '$'
 readErrorMsg db "could not read data", 13, 10, '$'
 closeErrorMsg db "error during file closing", 13, 10, '$'
@@ -609,8 +623,6 @@ SmallCactus DW ?, ?
 
 LargeCactus	DW ?, ?
 		 				DB 128 DUP(?)
-
-HighestScore dw ?
 
 STACK 100h
 
