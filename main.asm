@@ -9,7 +9,7 @@ SCRHEIGHT EQU 480   ;Pixels scherm hoogte
 VMEMADR EQU 0A0000h
 KEY_BUFFER	EQU 60h
 SPRITESIZE EQU 32*4+2+2
-SCORESIZE EQU 4 ; DD has the size of 4 bytes
+SCORESIZE EQU 4 ; DD has a size of 4 bytes
 
 INCLUDE "keyb.inc"
 
@@ -205,12 +205,6 @@ mov EDX, EAX
 SHL EDX, 5							; Left shift met 5
 XOR EAX, EDX						; Sla de xor van EAX en EDX op in EAX
 mov [RandomState], EAX
-;DEBUGGING
-;call printUnsignedInteger, [RandomState]
-;mov ah, 09h ;lets int 21h know it needs to print a string
-;mov edx, offset NewLine
-;int 21h ; interrupts to print string pointed to by edx
-;;
 ret
 ENDP generateRandomNumber
 
