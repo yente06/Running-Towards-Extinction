@@ -471,12 +471,10 @@ mov ebx, [player.highscore]
 cmp ebx, [player.score]
 jge @@printHighScore ; Print highscore if the score is smaller than the highscore
 call printUnsignedInteger, [player.score]
-jmp @@newline
+jmp @@stop
 @@printHighScore:
 call printUnsignedInteger, [player.highscore]
-@@newline:
-mov edx, offset NewLine
-int 21h
+@@stop:
 ret
 ENDP displayScore
 
@@ -552,14 +550,13 @@ PROC main
 		push ds
 		call setVideoMode, 12h
 		pop es
+		call displayScore
 		call drawFloor, offset Floor, offset SizeFloor, 50
 		call updateEnemies, 3
 		call drawPlayer, offset player
 
 		cmp [player.lives], 0 ; Stop the game if the player has no lives left
 		je gameOver
-
-		call displayScore
 
 		;Wait for the current frame to be drawn
 		call waitForFrame
@@ -571,7 +568,6 @@ PROC main
 	jmp gameLoop
 
 	gameOver:
-	call displayScore
 	;Checking if user presses escape and ending program when he did
 	checkEsc:
 	call isKeyPressed, 01h
