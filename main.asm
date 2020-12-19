@@ -348,7 +348,7 @@ mov EBX, [EDX + Enemy.score]
 add [player.score], EBX
 mov [EDX + Enemy.score], 0 ; So the score isn't added the next time if the object is not reused as another enemy
 cmp EAX, 0
-jne @@skip
+jne @@skip ; Already one call made
 mov EAX, 1
 call decideToSpawnEnemy, EDX, [@@rarity]
 
@@ -362,6 +362,11 @@ PROC decideToSpawnEnemy ; Generates 2 random numbers, 1 to decide if it want's t
 ARG @@enemy:dword, @@chance:dword ; Chance: 20 = 1 in 20
 USES EAX, EDX
 call generateRandomNumber
+
+mov EDX, [lastEnemySpawn]
+cmp EDX, [minEnemyDistance]
+jl @@notEnoughDistance
+mov [lastEnemySpawn], 0
 
 mov EAX, 4294967295 ; Max value of generateRandomNumber
 xor EDX, EDX  ; Set EDX to zero before division
@@ -382,7 +387,7 @@ mov [EAX + Enemy.y], 46
 mov [EAX + Enemy.top], 43
 mov [EAX + Enemy.bottom], 46
 mov [EAX + Enemy.score], 50
-jmp @@skip
+jmp SHORT @@skip
 @@sprite2:
 cmp [RandomState], 2863311530
 jae @@sprite3 ; Above or equal for unsigned integers
@@ -400,6 +405,11 @@ mov [EAX + Enemy.y], 43
 mov [EAX + Enemy.top], 41
 mov [EAX + Enemy.bottom], 43
 mov [EAX + Enemy.score], 200
+jmp @@skip
+
+@@notEnoughDistance:
+inc [lastEnemySpawn]
+
 @@skip:
 ret
 ENDP decideToSpawnEnemy
@@ -517,7 +527,7 @@ PROC main
 		call setVideoMode, 12h
 		pop es
 		call drawFloor, offset Floor, offset SizeFloor, 50
-		call updateEnemies, 50
+		call updateEnemies, 3
 		call drawPlayer, offset player
 
 		cmp [player.lives], 0 ; Stop the game if the player has no lives left
@@ -600,6 +610,8 @@ ends Enemy
 
 enemiesLen dd 4
 enemies Enemy 4 DUP(<>)
+lastEnemySpawn dd 0
+minEnemyDistance dd 15
 
 UDATASEG
 filehandle dw ?
