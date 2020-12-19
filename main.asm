@@ -8,7 +8,8 @@ SCRWIDTH EQU 640	; Pixels scherm breedte
 SCRHEIGHT EQU 480   ;Pixels scherm hoogte
 VMEMADR EQU 0A0000h
 KEY_BUFFER	EQU 60h
-SPRITESIZE EQU 32*4+2+2
+SPRITEWIDTH EQU 4
+SPRITESIZE EQU 32*SPRITEWIDTH+2+2
 SCORESIZE EQU 4 ; DD has a size of 4 bytes
 
 INCLUDE "keyb.inc"
@@ -228,6 +229,9 @@ cmp eax, 0											;Uncrouch when key is not pressed
 je @@unCrouch
 cmp ecx, 1											;if 1, already crouching
 je @@gotoEnd
+cmp [JumpState], 0
+jne @@gotoEnd ; If he's jumping he can't crouch
+; We make him crouch
 mov [player.crouching], 1				; Moet bukken
 mov EBX, [player.crouchOffset]
 mov [player.heightOffset], EBX
@@ -360,14 +364,28 @@ ENDP updateEnemies
 
 PROC decideToSpawnEnemy ; Generates 2 random numbers, 1 to decide if it want's to spawn an enemy and 1 to decide what enemy
 ARG @@enemy:dword, @@chance:dword ; Chance: 20 = 1 in 20
-USES EAX, EDX
+USES EAX, ECX, EDX
 call generateRandomNumber
-
+mov ECX, 1
 mov EDX, [lastEnemySpawn]
 cmp EDX, [minEnemyDistance]
-jl @@notEnoughDistance
+jl @@checkAdjacent
 mov [lastEnemySpawn], 0
+jmp @@start
+@@checkAdjacent:
+mov EAX, SPRITEWIDTH
+sub EAX, 2 ; We want the sprite to be a bit closer, because they have black bars
+cmp EDX, EAX
+jne @@notEnoughDistance
+mov EDX, [lastEnemyPtery]
+cmp EDX, 0
+jne @@notEnoughDistance
+inc [lastEnemySpawn]
+mov ECX, 0 ; Rembere that they are adjacent
 
+
+@@start:
+xor EAX, EAX
 mov EAX, 4294967295 ; Max value of generateRandomNumber
 xor EDX, EDX  ; Set EDX to zero before division
 div [@@chance]
@@ -381,6 +399,7 @@ mov [EAX + Enemy.x], 76 ; Begin point
 call generateRandomNumber
 cmp [RandomState], 1431655765
 jae @@sprite2 ; Above or equal for unsigned integers
+mov [lastEnemyPtery], 0
 ; Set sprite 1
 mov [EAX + Enemy.sprite], offset SmallCactus
 mov [EAX + Enemy.y], 46
@@ -391,6 +410,8 @@ jmp SHORT @@skip
 @@sprite2:
 cmp [RandomState], 2863311530
 jae @@sprite3 ; Above or equal for unsigned integers
+@@forceSprite2:
+mov [lastEnemyPtery], 0
 ; Set sprite 2
 mov [EAX + Enemy.sprite], offset LargeCactus
 mov [EAX + Enemy.y], 46
@@ -399,6 +420,10 @@ mov [EAX + Enemy.bottom], 46
 mov [EAX + Enemy.score], 100
 jmp @@skip
 @@sprite3:
+; We don't want to spawn a Pterodactyl adjacent to a cactus, so we spawn a large cactus instead
+cmp ECX, 0
+je @@forceSprite2
+mov [lastEnemyPtery], 1
 ; Set sprite 3
 mov [EAX + Enemy.sprite], offset Pterodactyl
 mov [EAX + Enemy.y], 43
@@ -581,7 +606,7 @@ RandomState DD 0; 1957386613 Binary: 111 0100 1010 1011 0101 1001 0111 0101
 NewLine db ' ', 13, 10, '$' ; 13, 10: newline, $: eindigd interrupt
 ;Jumping
 PlayerGroundHeight DD 46
-JumpState DD 0
+JumpState DD 0 ; It's not a boolean, it's the x coordinate of a function that calculates the height
 
 struc Player
 	x   dd 5  	  ; X position
@@ -611,7 +636,8 @@ ends Enemy
 enemiesLen dd 4
 enemies Enemy 4 DUP(<>)
 lastEnemySpawn dd 0
-minEnemyDistance dd 15
+minEnemyDistance dd 20
+lastEnemyPtery dd 0 ; We don't want to spawn an enemy adjacent to a pterodactyl
 
 UDATASEG
 filehandle dw ?
