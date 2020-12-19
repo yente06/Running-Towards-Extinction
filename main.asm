@@ -351,6 +351,7 @@ jmp @@skip
 ; This enemy is not used (off the screen)
 mov EBX, [EDX + Enemy.score]
 add [player.score], EBX
+add [scoreSinceChange], EBX ; Used for updating the difficulty
 mov [EDX + Enemy.score], 0 ; So the score isn't added the next time if the object is not reused as another enemy
 cmp EAX, 0
 jne @@skip ; Already one call made
@@ -502,6 +503,22 @@ call closeFile
 ret
 ENDP saveHighScore
 
+PROC updateDifficulty
+USES EAX
+mov EAX, [enemySpawnRate]
+cmp EAX, 0
+je @@skip
+mov EAX, [scoreSinceChange]
+cmp EAX, 2500
+jl @@skip
+mov [scoreSinceChange], 0
+; If enemySpawnRate is equal to 1, minEnemyDistance will be equal to 15
+sub [minEnemyDistance], 3
+dec [enemySpawnRate]
+@@skip:
+ret
+ENDP updateDifficulty
+
 
 PROC main
 	sti
@@ -551,18 +568,19 @@ PROC main
 	call drawPlayer, offset player
 
   ; Start de game loop
-	gameLoop:
+	@@gameLoop:
 		call updateCrouching, offset player
 		call updateJump, 4
 		push ds
 		call setVideoMode, 12h
 		pop es
 		call displayScore
+		call updateDifficulty
 		call drawFloor, offset Floor, offset SizeFloor, 50
-		call updateEnemies, 3
+		call updateEnemies, [enemySpawnRate]
 		call drawPlayer, offset player
 		cmp [player.lives], 0 ; Stop the game if the player has no lives left
-		je gameOver
+		je @@gameOver
 
 		;Wait for the current frame to be drawn
 		call waitForFrame
@@ -570,18 +588,18 @@ PROC main
 
 		call isKeyPressed, 01h
 		cmp eax, 0
-		jne terminate
-	jmp gameLoop
+		jne @@terminate
+	jmp @@gameLoop
 
-	gameOver:
+	@@gameOver:
 	call displayHighScore
 	;Checking if user presses escape and ending program when he did
-	checkEsc:
+	@@checkEsc:
 	call isKeyPressed, 01h
 	cmp eax, 0
-	je checkEsc
+	je @@checkEsc
 
-	terminate:
+	@@terminate:
 	call saveHighScore
 	call __keyb_uninstallKeyboardHandler
 	call terminateProcess
@@ -640,8 +658,11 @@ ends Enemy
 enemiesLen dd 4
 enemies Enemy 4 DUP(<>)
 lastEnemySpawn dd 0
-minEnemyDistance dd 20
+minEnemyDistance dd 30 ; Hardest is 15, easisest is 30
+enemySpawnRate dd 6 ; Hardest is 1, easiest is 6
 lastEnemyPtery dd 0 ; We don't want to spawn an enemy adjacent to a pterodactyl
+
+scoreSinceChange dd 0 ; The score gained after the last difficulty change
 
 UDATASEG
 filehandle dw ?
