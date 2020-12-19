@@ -461,6 +461,13 @@ mov edx, offset scoreText
 int 21h
 
 call printUnsignedInteger, [player.score]
+ret
+ENDP displayScore
+
+PROC displayHighScore
+USES EAX, EBX, EDX
+mov ah, 09h
+
 mov edx, offset NewLine
 int 21h
 
@@ -476,7 +483,7 @@ jmp @@stop
 call printUnsignedInteger, [player.highscore]
 @@stop:
 ret
-ENDP displayScore
+ENDP displayHighScore
 
 PROC saveHighScore
 USES EAX, EBX, ECX, EDX
@@ -554,7 +561,6 @@ PROC main
 		call drawFloor, offset Floor, offset SizeFloor, 50
 		call updateEnemies, 3
 		call drawPlayer, offset player
-
 		cmp [player.lives], 0 ; Stop the game if the player has no lives left
 		je gameOver
 
@@ -568,6 +574,7 @@ PROC main
 	jmp gameLoop
 
 	gameOver:
+	call displayHighScore
 	;Checking if user presses escape and ending program when he did
 	checkEsc:
 	call isKeyPressed, 01h
