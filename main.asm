@@ -100,7 +100,10 @@ mov ESI, EDI				;Hou EDI bij
 
 @@gohorizontal:
 mov AL, [EBX]				;Zet hex in AL
+cmp AL, 0           ;We don't display black pixels, otherwise there would be a black border around the sprite
+je @@allBlack
 mov [EDI], AL				;Zet AL in videogeheugen
+@@allBlack:
 add edi, 1					;Volgende reeks in videogeheugen
 add ebx, 1					;Volgende hex
 loop @@gohorizontal
@@ -335,8 +338,6 @@ jne @@skip
 mov EBX, [player.y]
 cmp EBX, [EDX + Enemy.top]
 jl @@skip ; high enough
-;dec [player.lives]
-;jmp @@skip
 
 ; Check if low enoughg
 @@checkBottom:
