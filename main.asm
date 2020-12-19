@@ -263,6 +263,7 @@ jne @@update
 mov EAX, [JumpState]
 cmp EAX, 0     ; If the jump state is 0, we are not jumping
 je @@end
+mov [player.crouching], 0
 
 @@update:
 inc [JumpState]
@@ -506,14 +507,14 @@ ENDP saveHighScore
 PROC updateDifficulty
 USES EAX
 mov EAX, [enemySpawnRate]
-cmp EAX, 0
+cmp EAX, 1
 je @@skip
 mov EAX, [scoreSinceChange]
 cmp EAX, 2500
 jl @@skip
 mov [scoreSinceChange], 0
 ; If enemySpawnRate is equal to 1, minEnemyDistance will be equal to 15
-sub [minEnemyDistance], 3
+sub [minEnemyDistance], 2
 dec [enemySpawnRate]
 @@skip:
 ret
@@ -658,7 +659,7 @@ ends Enemy
 enemiesLen dd 4
 enemies Enemy 4 DUP(<>)
 lastEnemySpawn dd 0
-minEnemyDistance dd 30 ; Hardest is 15, easisest is 30
+minEnemyDistance dd 30 ; Hardest is 20, easisest is 30
 enemySpawnRate dd 6 ; Hardest is 1, easiest is 6
 lastEnemyPtery dd 0 ; We don't want to spawn an enemy adjacent to a pterodactyl
 
